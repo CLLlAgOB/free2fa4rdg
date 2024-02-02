@@ -1,0 +1,39 @@
+server radius1812 {
+listen {
+        type = auth
+        ipaddr = *
+        port = 1812
+        limit {
+              max_connections = 50
+              lifetime = 0
+              idle_timeout = 30
+        }
+}
+
+authorize {
+    rest
+    if (!&User-Password) {
+        update control {
+            Auth-Type := REST
+        }
+        update request {
+            User-Password := "dummy_password"
+        }
+    }
+}
+
+#  Authentication.
+authenticate {
+    Auth-Type rest {
+        rest {
+            updated = 1
+        }
+        if (updated) {
+            ok
+        }
+    }
+}
+
+
+
+}

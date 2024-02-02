@@ -1,0 +1,36 @@
+rest {
+    tls {
+        check_cert = yes
+        check_cert_cn = yes
+    }
+
+    connect_uri = "https://free2fa4rdg_api:5000"
+    connect_timeout = FREE2FA_TIMEOUT
+
+    authorize {
+        uri = "${..connect_uri}/authorize"
+        method = 'post'
+        body = 'json'
+        data = '{ "user_name": "%{User-Name}", "client_key": "FREE2FA_API_KEY" }'
+        tls = ${..tls}
+        timeout = 3
+    }
+    authenticate {
+        uri = "${..connect_uri}/authenticate"
+        method = 'post'
+        body = 'json'
+        data = '{ "user_name": "%{User-Name}", "client_key": "FREE2FA_API_KEY" }'
+        tls = ${..tls}
+        timeout = FREE2FA_TIMEOUT
+    }
+
+    pool {
+        start = ${thread[pool].start_servers}
+        min = ${thread[pool].min_spare_servers}
+        max = ${thread[pool].max_servers}
+        spare = ${thread[pool].max_spare_servers}
+        uses = 0
+        lifetime = 0
+        idle_timeout = 120
+    }
+}

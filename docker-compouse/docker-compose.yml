@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  free2fa4rdg_setup:
+    image: clllagob/free2fa4rdg:setup_v1.0
+    volumes:
+      - free2fa4rdg_ca_certs:/certs/rootca
+      - free2fa4rdg_ca_private:/certs/rootpca
+      - free2fa4rdg_admin_api_certs:/certs/free2fa4rdg_admin_api
+      - free2fa4rdg_admin_html_certs:/certs/free2fa4rdg_admin_html
+      - free2fa4rdg_api_certs:/certs/free2fa4rdg_api
+    environment:
+      - CA_EXPIRY_DAYS=${CA_EXPIRY_DAYS}
+      - ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML=${ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML}
+    networks:
+      - free2fa4rdg_ca_network
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /certs/rootca/ca.crt ]"]
+      interval: 1s
+      timeout: 5s
+      retries: 120
+
+  free2fa4rdg_admin_html:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:admin_html_v1.0
+    volumes:
+      - free2fa4rdg_admin_html_certs:/etc/nginx/certs
+      - free2fa4rdg_ca_certs:/usr/local/share/ca-certificates/
+    networks:
+       - free2fa4rdg_admin_network
+    depends_on:
+      free2fa4rdg_admin_api:
+        condition: service_started
+    ports:
+       - "443:443"
+    entrypoint: "./start.sh"
+
+  free2fa4rdg_admin_api:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:admin_api_v1.0
+    environment:
+       - ADMIN_SECRET_KEY=${ADMIN_SECRET_KEY}
+       - RESET_PASSWORD=${RESET_PASSWORD}
+    volumes:
+      - free2fa4rdg_db:/opt/db
+      - free2fa4rdg_admin_api_certs:/app/certs
+    networks:
+      - free2fa4rdg_admin_network
+      - free2fa4rdg_ca_network
+    depends_on:
+      free2fa4rdg_setup:
+        condition: service_healthy
+
+  free2fa4rdg_api:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:api_v1.0
+    environment:
+      - FREE2FA_TELEGRAM_BOT_TOKEN=${FREE2FA_TELEGRAM_BOT_TOKEN}
+      - FREE2FA_TELEGRAM_BOT_LANGUAGE=${FREE2FA_TELEGRAM_BOT_LANGUAGE}
+      - FREE2FA_AUTO_REG_ENABLED=${FREE2FA_AUTO_REG_ENABLED}
+      - FREE2FA_BYPASS_ENABLED=${FREE2FA_BYPASS_ENABLED}
+      - FREE2FA_TIMEOUT=${FREE2FA_TIMEOUT}
+      - ALLOW_API_FAILURE_PASS=${ALLOW_API_FAILURE_PASS}
+    volumes:
+      - free2fa4rdg_db:/opt/db
+      - free2fa4rdg_api_certs:/app/certs
+      - free2fa4rdg_ca_certs:/usr/local/share/ca-certificates/
+    networks:
+      - free2fa4rdg_network
+    command: >
+      /bin/sh -c "
+      mkdir -p /usr/share/nginx/html/certs;
+      cp -f /usr/local/share/ca-certificates/ca.crt /usr/share/nginx/html/certs/ca.crt;
+      update-ca-certificates;
+      exec python /app/main.py"
+    depends_on:
+      free2fa4rdg_setup:
+        condition: service_healthy
+
+  free2fa4rdg_freeradius:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:freeradius_v1.0
+    environment:
+      - RADIUS_CLIENT_IP=${RADIUS_CLIENT_IP}
+      - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET}
+      - RADIUS_CLIENT_TIMEOUT=${FREE2FA_TIMEOUT}
+      - RADIUS_START_SERVERS=${RADIUS_START_SERVERS}
+      - RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS}
+      - RADIUS_MAX_SPARE_SERVERS=${RADIUS_MAX_SPARE_SERVERS}
+      - RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS}
+    depends_on:
+      - free2fa4rdg_api
+    networks:
+      - free2fa4rdg_network
+    ports:
+      - "1812:1812/udp"
+    volumes:
+      - free2fa4rdg_ca_certs:/usr/local/share/ca-certificates/:ro
+    entrypoint: "./start.sh"
+
+volumes:
+  free2fa4rdg_db:
+  free2fa4rdg_admin_api_certs:
+  free2fa4rdg_admin_html_certs:
+  free2fa4rdg_ca_certs:
+  free2fa4rdg_ca_private:
+  free2fa4rdg_api_certs:
+
+networks:
+  free2fa4rdg_admin_network:
+    driver: bridge
+  free2fa4rdg_network:
+    driver: bridge
+  free2fa4rdg_ca_network:
+    driver: bridge
