@@ -1,5 +1,11 @@
 # Free2FA4RDG: A Telegram Bot for Two-Factor Authentication in Windows RD Gateway
 
+[![Docker Hub](https://img.shields.io/docker/pulls/clllagob/free2fa4rdg.svg?style=flat-square)][Docker Hub]
+[![License](https://img.shields.io/github/license/clllagob/free2fa4rdg.svg?style=flat-square)][License]
+
+[Docker Hub]:      https://hub.docker.com/r/clllagob/free2fa4rdg
+[License]:         https://github.com/clllagob/free2fa4rdg/blob/master/LICENSE
+
 ![screenshot](img/1-0en.png)
 
 Free2FA4RDG is a free solution for enabling two-factor authentication when using Remote Desktop (RDP) through the Windows Server RD Gateway service. This system uses a Telegram bot as the second factor for authentication, providing an additional layer of security.  
