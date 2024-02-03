@@ -59,16 +59,18 @@ Free2FA4RDG состоит из нескольких микросервисов,
 
 ### Подготовка сервера
 
-1. Произведите установку Linux, выбрав Ubuntu 22.04 LTS или CentOS 7 (проверено на этих версиях).
-2. Создайте директорию для настроек Free2FA4RDG:
+1. Создайте нового бота Telegram: https://core.telegram.org/bots#creating-a-new-bot.
+2. Произведите установку Linux, выбрав Ubuntu 22.04 LTS или CentOS 7 (проверено на этих версиях).
+3. Создайте директорию для настроек Free2FA4RDG:
    ```
    mkdir -p /opt/2fa/ && cd /opt/2fa/
    ```
-3. Запустите скрипт установки:
+4. Запустите скрипт установки:
    ```
    curl -o install.sh https://raw.githubusercontent.com/CLLlAgOB/free2fa4rdg/main/install.sh && bash install.sh
    ```
-4. Следуйте инструкциям скрипта.
+5. Следуйте инструкциям скрипта.
+6. Создайте запись днс для портала администратора (https://free2fa4rdg_admin_html по умолчанию) либо на то имя что вы указали при  и установите в параметре ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML. Пароль и логин по умолчанию для портала администратора: admin admin.
 
 ### Настройка NPS
 
@@ -105,6 +107,6 @@ Free2FA4RDG состоит из нескольких микросервисов,
 - `ALLOW_API_FAILURE_PASS`: (true/false) Пускать пользователей без 2FA, если `api.telegram.org` недоступен. 
 - `ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML`: ДНС имя веб сайта админки. Необходимо прописать его в днс или hosts для удобства доступа.
 
-Пароль и логин по умолчанию для портала администратора: admin admin.
+При первом входе необходимо будет сменить пароль администратора.
 
-![screenshot](img/1-4.png)
+![screenshot](img/1-2.png)
