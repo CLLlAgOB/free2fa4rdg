@@ -29,7 +29,7 @@ install_docker_compose() {
     if [[ ":$PATH:" != *":/usr/local/bin:"* ]]; then
         echo "Adding /usr/local/bin to your PATH"
         export PATH=$PATH:/usr/local/bin
-        echo 'export PATH=$PATH:/usr/local/bin' >> ~/.bashrc
+        echo "export PATH=$PATH:/usr/local/bin" >> ~/.bashrc
     fi
     curl -L "https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
@@ -37,7 +37,7 @@ install_docker_compose() {
 
 # Function to generate a random key
 generate_random_key() {
-    cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+    tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 32 | head -n 1
 }
 
 # Function to create a .env file

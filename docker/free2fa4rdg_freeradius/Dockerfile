@@ -1,8 +1,7 @@
-FROM freeradius/freeradius-server
+FROM freeradius/freeradius-server:3.2.3
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl \
-    && update-ca-certificates \
+    && apt-get install -y --no-install-recommends curl=7.81.0-1ubuntu1.15 \
     # Cleaning up cache and temporary files to reduce image size
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* 

@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   free2fa4rdg_setup:
-    image: clllagob/free2fa4rdg:setup_v1.0
+    image: clllagob/free2fa4rdg:setup_latest
     volumes:
       - free2fa4rdg_ca_certs:/certs/rootca
       - free2fa4rdg_ca_private:/certs/rootpca
@@ -22,7 +22,7 @@ services:
 
   free2fa4rdg_admin_html:
     restart: unless-stopped
-    image: clllagob/free2fa4rdg:admin_html_v1.0
+    image: clllagob/free2fa4rdg:admin_html_latest
     volumes:
       - free2fa4rdg_admin_html_certs:/etc/nginx/certs
       - free2fa4rdg_ca_certs:/usr/local/share/ca-certificates/
@@ -37,7 +37,7 @@ services:
 
   free2fa4rdg_admin_api:
     restart: unless-stopped
-    image: clllagob/free2fa4rdg:admin_api_v1.0
+    image: clllagob/free2fa4rdg:admin_api_latest
     environment:
        - ADMIN_SECRET_KEY=${ADMIN_SECRET_KEY}
        - RESET_PASSWORD=${RESET_PASSWORD}
@@ -53,7 +53,7 @@ services:
 
   free2fa4rdg_api:
     restart: unless-stopped
-    image: clllagob/free2fa4rdg:api_v1.0
+    image: clllagob/free2fa4rdg:api_latest
     environment:
       - FREE2FA_TELEGRAM_BOT_TOKEN=${FREE2FA_TELEGRAM_BOT_TOKEN}
       - FREE2FA_TELEGRAM_BOT_LANGUAGE=${FREE2FA_TELEGRAM_BOT_LANGUAGE}
@@ -79,9 +79,8 @@ services:
 
   free2fa4rdg_freeradius:
     restart: unless-stopped
-    image: clllagob/free2fa4rdg:freeradius_v1.0
+    image: clllagob/free2fa4rdg:freeradius_latest
     environment:
-      - RADIUS_CLIENT_IP=${RADIUS_CLIENT_IP}
       - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET}
       - RADIUS_CLIENT_TIMEOUT=${FREE2FA_TIMEOUT}
       - RADIUS_START_SERVERS=${RADIUS_START_SERVERS}

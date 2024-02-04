@@ -5,42 +5,54 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
+"""Api module for database administration via website"""
 
-import aiosqlite
 import os
 import logging
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException, Body, Depends, Security
-from pydantic import BaseModel
-from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from jose import JWTError, jwt
-from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from typing import List
 from sqlite3 import IntegrityError
 
+import aiosqlite
+from fastapi import FastAPI, HTTPException, Body, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+
+
 # Logging Setup
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("free2fa4rdg_admin_api")
 
 app = FastAPI()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/admin", scopes={"admin": "Admin privileges"})
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/auth/admin", scopes={"admin": "Admin privileges"})
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class ResetPasswordRequest(BaseModel):
+    """class Reset Password Request"""
     secret_key: str
-    
+
+
 class TokenData(BaseModel):
+    """class TokenData for stored JWT"""
     username: str = None
     scopes: List[str] = []
 
+
 class AdminAuth(BaseModel):
+    """class Authorization for administrator"""
     username: str
     password: str
 
+
 class PasswordChange(BaseModel):
+    """class Password Change for administrator"""
     old_password: str
     new_password: str
 
@@ -62,64 +74,197 @@ app.add_middleware(
 )
 
 # Model for user data
+
+
 class UserUpdate(BaseModel):
+    """
+    Pydantic model for updating user data.
+
+    Attributes:
+        domain_and_username (str): The user's unique domain username.
+        telegram_id (int): The user's Telegram identifier.
+        is_bypass (bool): Flag indicating whether there are special rules to let in without request.
+        The default value is False.
+    """
     domain_and_username: str
     telegram_id: int
     is_bypass: bool
+
 
 DATABASE_PATH = '/opt/db/users.db'
 
 
 class User(BaseModel):
+    """
+    Pydantic model for representing user data.
+
+    Attributes:
+        domain_and_username (str): The user's unique domain username.
+        telegram_id (int): The user's Telegram identifier.
+        is_bypass (bool, optional):
+        Flag indicating whether there are special rules to let in without request.
+        The default value is False.
+    """
     domain_and_username: str
     telegram_id: int
     is_bypass: bool = False
 
+
 async def generate_password_hash(password):
+    """
+    Generates a password hash using Bcrypt.
+
+    Args:
+        password (str): The plain text password to hash.
+
+    Returns:
+        str: A hashed version of the password.
+    """
     return pwd_context.hash(password)
 
+
 def create_access_token(data: dict, scopes: List[str]):
+    """
+    Create a new access token.
+
+    Args:
+        data (dict): The data to encode in the token.
+        scopes (List[str]): List of scopes (permissions) for the token.
+
+    Returns:
+        str: Encoded JWT token.
+    """
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire, "scopes": scopes})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 async def authenticate_user(username: str, password: str):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        async with db.execute('SELECT username, hashed_password FROM admins WHERE username = ?', (username,)) as cursor:
+    """
+    Authenticate a user by their username and password.
+
+    Args:
+        username (str): Username of the user to authenticate.
+        password (str): Password of the user for authentication.
+
+    Returns:
+        dict or None: User object if authentication is successful; None otherwise.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db_connection:
+        query = ('SELECT username, hashed_password FROM admins WHERE username = ?')
+        async with db_connection.execute(query, (username,)) as cursor:
             admin = await cursor.fetchone()
             if admin and await verify_password(password, admin[1]):
                 return {"username": admin[0]}
     return None
 
+
 async def verify_password(plain_password, hashed_password):
+    """
+    Verify a plain password against the hashed password.
+
+    Args:
+        plain_password (str): The plain text password to verify.
+        hashed_password (str): The hashed password to verify against.
+
+    Returns:
+        bool: True if the password is correct, False otherwise.
+    """
     return pwd_context.verify(plain_password, hashed_password)
 
+
 async def get_db():
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        yield db
+    """
+    Asynchronous generator that establishes and manages a database connection context.
+
+    This function opens an asynchronous connection to the database using aiosqlite and
+    provides this connection for use in database operations. After the completion of
+    operations, the connection is automatically closed, ensuring proper resource
+    management.
+
+    Yields:
+        db_connection: A context manager providing the database connection.
+
+    Usage example in FastAPI:
+        @app.get("/items/")
+        async def read_items(db_connection=Depends(get_db)):
+            async with db_connection.execute("SELECT * FROM items") as cursor:
+                items = await cursor.fetchall()
+                return items
+
+    This ensures efficient and safe management of database connections, especially
+    in asynchronous applications.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db_connection:
+        yield db_connection
+
 
 async def init_db():
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute('''
+    """
+    Asynchronously initializes the database.
+
+    This function establishes a connection to the SQLite database using aiosqlite. It
+    creates the 'users' table if it doesn't already exist. The 'users' table includes
+    columns for 'domain_and_username', 'telegram_id', and 'is_bypass'. The
+    'domain_and_username' column is set as the primary key and is unique for each
+    record. The 'is_bypass' column is a boolean value, defaulting to FALSE if not
+    specified.
+
+    The database schema is essential for storing and managing user data effectively,
+    especially in applications integrating with Telegram bots or requiring user
+    authentication and management.
+
+    This function should be called when the application starts, ensuring that the
+    necessary database structure is in place for the application to function correctly.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db_connection:
+        await db_connection.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 domain_and_username TEXT PRIMARY KEY UNIQUE,
                 telegram_id INTEGER,
                 is_bypass BOOLEAN NOT NULL DEFAULT FALSE
             )
         ''')
-        await db.commit()
+        await db_connection.commit()
+
 
 @app.on_event("startup")
-
 async def startup_event():
-    await init_db()
-    await init_admin_db() 
+    """
+    Performs startup actions for the FastAPI application.
 
-async def get_current_user(security_scopes: SecurityScopes, token: str = Depends(oauth2_scheme)):
+    This asynchronous function is executed when the FastAPI application starts. It's responsible
+    for performing initial setup tasks, which include initializing the databases. The `init_db()`
+    function is called to set up the primary database, and `init_admin_db()` is called to set up
+    the administrative database or perform administrative initialization tasks.
+
+    These initializations typically involve creating necessary tables and structures in the
+    database if they don't already exist, ensuring the application has the required database
+    schema to operate correctly from the outset.
+    """
+    await init_db()
+    await init_admin_db()
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    """
+    Retrieves the current authenticated user based on the provided JWT token.
+
+    Args:
+        token (str): JWT token obtained from the request header.
+
+    Raises:
+        HTTPException: If the token is not provided,
+        invalid, or the user does not have 'admin' scope.
+
+    Returns:
+        TokenData: The username and scopes from the token if validation is successful.
+    """
     if token is None:
         raise HTTPException(status_code=401, detail="Not authenticated")
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -127,142 +272,305 @@ async def get_current_user(security_scopes: SecurityScopes, token: str = Depends
             raise HTTPException(status_code=401, detail="Invalid token")
         token_scopes = payload.get("scopes", [])
         token_data = TokenData(scopes=token_scopes, username=username)
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    except JWTError as jwt_error:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token"
+        ) from jwt_error
 
     if "admin" not in token_data.scopes:
         raise HTTPException(
             status_code=403,
             detail="Not enough permissions",
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={"WWW-Authenticate": "Bearer"}
         )
 
     return token_data
 
+
 @app.post("/users/")
-async def add_user(user: User, current_user: User = Depends(get_current_user)):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+async def add_user(user: User, _: User = Depends(get_current_user)):
+    """
+    Adds a new user to the database.
+
+    This function receives user data, connects asynchronously to the database, and
+    attempts to insert the new user's data. It handles unique constraint violations
+    by raising an HTTP 400 error if a user with the same domain_and_username already exists.
+
+    Args:
+        user (User): User object containing user data for insertion.
+        current_user (User): Current authenticated user (obtained through dependency).
+
+    Raises:
+        HTTPException: 400 error if a user with the same domain_and_username already exists.
+
+    Returns:
+        dict: Confirmation message upon successful addition of the user.
+    """
+    sql_query = (
+        'INSERT INTO users (domain_and_username, telegram_id, is_bypass) '
+        'VALUES (?, ?, ?)'
+    )
+    async with aiosqlite.connect(DATABASE_PATH) as db_conn:
         try:
-            await db.execute('INSERT INTO users (domain_and_username, telegram_id, is_bypass) VALUES (?, ?, ?)',
-                             (user.domain_and_username, user.telegram_id, user.is_bypass))
-            await db.commit()
+            await db_conn.execute(sql_query,
+                                  (user.domain_and_username, user.telegram_id, user.is_bypass))
+            await db_conn.commit()
             return {"message": "User added successfully"}
-        except aiosqlite.IntegrityError:
-            raise HTTPException(status_code=400, detail="User already exists")
+        except aiosqlite.IntegrityError as integrity_error:
+            raise HTTPException(
+                status_code=400,
+                detail="User already exists"
+            ) from integrity_error
+
 
 @app.get("/users/")
-async def get_all_users(current_user: User = Depends(get_current_user)):
-    logger.info(f"get_all_users: ")
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        async with db.execute('SELECT * FROM users') as cursor:
+async def get_all_users(_: User = Depends(get_current_user)):
+    """
+    Fetches and returns a list of all users from the database.
+
+    This function connects to the database asynchronously and retrieves all user records.
+    Access is restricted to authenticated users only.
+
+    Args:
+        current_user (User): The authenticated user, obtained via dependency injection.
+
+    Returns:
+        List[dict]: A list of dictionaries, each representing a user record.
+    """
+    logger.info("get_all_users")
+    async with aiosqlite.connect(DATABASE_PATH) as db_connection:
+        async with db_connection.execute('SELECT * FROM users') as cursor:
             users = await cursor.fetchall()
             return users
 
+
 @app.delete("/users/{domain_and_username}")
-async def delete_user(domain_and_username: str, current_user: User = Depends(get_current_user)):
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute('DELETE FROM users WHERE domain_and_username = ?', (domain_and_username,))
-        await db.commit()
+async def delete_user(domain_and_username: str, _: User = Depends(get_current_user)):
+    """
+    Retrieves all users from the database.
+
+    Connects asynchronously to the database and fetches records from the 'users' table.
+    Accessible only to authenticated users.
+
+    Args:
+        _ (User): The current authenticated user, via dependency injection.
+
+    Returns:
+        List: A list of user records with all fields from the 'users' table.
+
+    Note:
+    Intended for administrative use. Access should be restricted to authorized users.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db_connection:
+        await db_connection.execute(
+            'DELETE FROM users WHERE domain_and_username = ?', (domain_and_username,))
+        await db_connection.commit()
         return {"message": "User deleted successfully"}
 
+
 @app.get("/verify-token")
-async def verify_token(current_user: User = Depends(get_current_user)):
+async def verify_token(_: User = Depends(get_current_user)):
+    """
+    Verifies the validity of the user's authentication token.
+
+    This endpoint checks if the provided JWT token is valid. It is accessible only to
+    authenticated users, as it uses the dependency `get_current_user` to validate the
+    token.
+
+    Args:
+        _ (User): The authenticated user, verified by the JWT token.
+
+    Returns:
+        dict: A message confirming the token is valid.
+
+    This endpoint is useful for frontend applications to validate user sessions.
+    """
     return {"message": "Token is valid"}
 
 # Function for user update
-from sqlite3 import IntegrityError
-from fastapi import HTTPException
+
 
 @app.put("/users/{username}")
-async def update_user(username: str, user_update: UserUpdate = Body(...), current_user: User = Depends(get_current_user)):
-    logger.info(f"Updating user: {username}, {user_update} {Body ()}")
+async def update_user(username: str, user_update: UserUpdate = Body(...),
+                      _: User = Depends(get_current_user)):
+    """
+    Updates the specified user's information in the database.
+
+    This endpoint allows updating user data such as domain_and_username, telegram_id, and
+    is_bypass flag for a given username. It is accessible only to authenticated users.
+
+    Args:
+        username (str): The username of the user to be updated.
+        user_update (UserUpdate): Object containing the updated data.
+        _ (User): The authenticated user, verified by the JWT token.
+
+    Raises:
+        HTTPException: 404 error if the user is not found, 400 error for unique constraint
+                       violations, and 500 error for unexpected database errors.
+
+    Returns:
+        dict: A confirmation message upon successful update of the user.
+    """
+    logger.info("Updating user: %s, %s, %s", username, user_update, Body())
     try:
-        logger.info(f"Received update data: {user_update.json()}")
-        async with aiosqlite.connect(DATABASE_PATH) as db:
+        logger.info("Received update data: %s", user_update.json())
+        async with aiosqlite.connect(DATABASE_PATH) as db_connection:
             # Checking user existence
-            cursor = await db.execute('SELECT * FROM users WHERE domain_and_username = ?', (username,))
+            cursor = await db_connection.execute(
+                'SELECT * FROM users WHERE domain_and_username = ?', (username,))
             existing_user = await cursor.fetchone()
             if not existing_user:
                 raise HTTPException(status_code=404, detail="User not found")
 
             # Updating user data
-            await db.execute('''
+            await db_connection.execute('''
                 UPDATE users SET domain_and_username = ?, telegram_id = ?, is_bypass = ? 
                 WHERE domain_and_username = ?''',
-                (user_update.domain_and_username, user_update.telegram_id, user_update.is_bypass, username)
-            )
-            await db.commit()
+                                        (user_update.domain_and_username,
+                                         user_update.telegram_id, user_update.is_bypass, username))
+            await db_connection.commit()
+            return {"message": "User updated successfully"}
 
-        return {"message": "User updated successfully"}
+    except IntegrityError as error:
+        if "UNIQUE constraint failed" in str(error):
+            logger.error("Unique constraint error: %s", error)
+            raise HTTPException(
+                status_code=400, detail="User with this domain_and_username"
+                "already exists") from error
+        logger.error("Database integrity error: %s", error)
+        raise HTTPException(
+            status_code=500, detail="Database integrity error") from error
 
-    except IntegrityError as e:
-        if "UNIQUE constraint failed" in str(e):
-            logger.error(f"Unique constraint error: {e}")
-            raise HTTPException(status_code=400, detail="User with this domain_and_username already exists")
-        else:
-            logger.error(f"Database integrity error: {e}")
-            raise HTTPException(status_code=500, detail="Database integrity error")
-
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+    except Exception as error:
+        logger.error("Unexpected error: %s", error)
+        raise HTTPException(
+            status_code=500, detail="An unexpected error occurred") from error
 
 
 @app.get("/users/{username}")
-async def get_user(username: str, db=Depends(get_db), current_user: User = Depends(get_current_user)):
-    async with db.execute('SELECT * FROM users WHERE domain_and_username = ?', (username,)) as cursor:
+async def get_user(username: str, db_connection=Depends(get_db),
+                   _: User = Depends(get_current_user)):
+    """
+    Retrieves a specific user by username from the database.
+
+    Args:
+        username (str): Username of the user to retrieve.
+        db_connection: Database connection dependency.
+        _ (User): Placeholder for the authenticated user. Used for authentication check.
+
+    Returns:
+        dict: A dictionary containing the user's information if found.
+
+    Raises:
+        HTTPException: 404 error if the user is not found.
+    """
+    async with db_connection.execute(
+            'SELECT * FROM users WHERE domain_and_username = ?', (username,)) as cursor:
         user = await cursor.fetchone()
         if user:
             return {"domain_and_username": user[0], "telegram_id": user[1], "is_bypass": user[2]}
-        else:
-            raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found")
+
 
 @app.get("/health")
 async def health_check():
+    """
+    Health check endpoint.
+
+    This endpoint provides a simple way to check if the service is up and running.
+    It's useful for monitoring and automation purposes, like in Kubernetes liveness
+    and readiness probes.
+
+    Returns:
+        dict: A dictionary with the status of the service.
+    """
     return {"status": "ok"}
 
+
 async def init_admin_db():
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute('''
+    """
+    Initializes the admin database.
+
+    Creates the 'admins' table if it does not exist and adds a default admin user
+    if not already present. The default admin is useful for initial setup and testing.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db_connection:
+        await db_connection.execute('''
             CREATE TABLE IF NOT EXISTS admins (
                 username TEXT PRIMARY KEY,
                 hashed_password TEXT,
                 last_password_change DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        await db.commit()
+        await db_connection.commit()
 
         # Проверяем, существует ли уже пользователь admin
-        async with db.execute('SELECT username FROM admins WHERE username = ?', ('admin',)) as cursor:
+        async with db_connection.execute(
+                'SELECT username FROM admins WHERE username = ?', ('admin',)) as cursor:
             if await cursor.fetchone() is None:
                 # Добавляем администратора по умолчанию, если его еще нет
                 default_admin = "admin"
                 default_password_hash = await generate_password_hash("admin")
-                await db.execute('INSERT INTO admins (username, hashed_password) VALUES (?, ?)',
-                                 (default_admin, default_password_hash))
-                await db.commit()
+                await db_connection.execute(
+                    'INSERT INTO admins (username, hashed_password) VALUES (?, ?)',
+                    (default_admin, default_password_hash))
+                await db_connection.commit()
 
 
 @app.post("/auth/admin")
-async def admin_auth(admin_auth: AdminAuth):
-    # Проверка пользователя
-    user = await authenticate_user(admin_auth.username, admin_auth.password)
+async def admin_auth(auth_details: AdminAuth):
+    """
+    Authenticates an admin user.
+
+    Verifies the admin's credentials and returns an access token if authentication is
+    successful. The token is used for accessing protected admin endpoints.
+
+    Args:
+        auth_details (AdminAuth): Authentication details including username and password.
+
+    Returns:
+        dict: Access token and token type if authentication is successful.
+
+    Raises:
+        HTTPException: 401 error if the username or password is incorrect.
+    """
+    # User verification
+    user = await authenticate_user(auth_details.username, auth_details.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    # Создание токена
-    access_token = create_access_token(data={"sub": user["username"]}, scopes=["admin"])
+        raise HTTPException(
+            status_code=401, detail="Incorrect username or password")
+    # Token creation
+    access_token = create_access_token(
+        data={"sub": user["username"]}, scopes=["admin"])
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 @app.post("/change-password")
-async def change_password(password_change: PasswordChange, current_user: User = Security(get_current_user, scopes=["admin"])):
-    # Проверка, что пользователь является администратором
-    if current_user.username != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized to change password")
+async def change_password(password_change: PasswordChange,
+                          _: User = Depends(get_current_user)):
+    """
+    Allows the authenticated user to change their password.
 
-    async with aiosqlite.connect(DATABASE_PATH) as db:
+    This endpoint updates the user's password after verifying the old password.
+    It is accessible only to the authenticated user.
+
+    Args:
+        password_change (PasswordChange): Object containing the old and new passwords.
+
+    Raises:
+        HTTPException: 403 error if the old password is incorrect.
+                       404 error if the user is not found.
+
+    Returns:
+        dict: A message indicating successful password change.
+    """
+
+    async with aiosqlite.connect(DATABASE_PATH) as db_connection:
         # Получение хешированного текущего пароля из базы данных
-        async with db.execute('SELECT hashed_password FROM admins WHERE username = ?', (current_user.username,)) as cursor:
+        async with db_connection.execute(
+            'SELECT hashed_password FROM admins WHERE username = ?',
+                ("admin",)) as cursor:
             current_hashed_password = await cursor.fetchone()
 
             if current_hashed_password is None:
@@ -270,32 +578,66 @@ async def change_password(password_change: PasswordChange, current_user: User = 
 
             # Проверка старого пароля
             if not pwd_context.verify(password_change.old_password, current_hashed_password[0]):
-                raise HTTPException(status_code=403, detail="Old password is incorrect")
+                raise HTTPException(
+                    status_code=403, detail="Old password is incorrect")
 
             # Обновление пароля
             new_hashed_password = await generate_password_hash(password_change.new_password)
-            await db.execute('UPDATE admins SET hashed_password = ? WHERE username = ?', (new_hashed_password, current_user.username))
-            await db.commit()
+            await db_connection.execute(
+                'UPDATE admins SET hashed_password = ? WHERE username = ?',
+                (new_hashed_password, "admin"))
+            await db_connection.commit()
 
     return {"message": "Password changed successfully"}
 
+
 @app.post("/reset-password")
 async def reset_password(request: ResetPasswordRequest):
+    """
+    Resets the password of the admin user to a default value.
+
+    This endpoint is used to reset the admin password using a secret key. The new
+    password is set to a predefined default ('admin').
+
+    Args:
+        request (ResetPasswordRequest): Request object containing the secret key.
+
+    Raises:
+        HTTPException: 403 error if password reset is not enabled.
+                       401 error if the secret key is invalid.
+
+    Returns:
+        dict: A message indicating successful password reset.
+    """
     secret_key = request.secret_key
     if not RESET_PASSWORD:
-        raise HTTPException(status_code=403, detail="Password reset not enabled")
+        raise HTTPException(
+            status_code=403, detail="Password reset not enabled")
 
     if secret_key != SECRET_KEY:
         raise HTTPException(status_code=401, detail="Invalid secret key")
 
     # Сброс пароля админа на 'admin'
     new_hashed_password = await generate_password_hash("admin")
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute('UPDATE admins SET hashed_password = ? WHERE username = ?', (new_hashed_password, "admin"))
-        await db.commit()
+    async with aiosqlite.connect(DATABASE_PATH) as db_connection:
+        await db_connection.execute(
+            'UPDATE admins SET hashed_password = ? WHERE username = ?',
+            (new_hashed_password, "admin"))
+        await db_connection.commit()
 
     return {"message": "Password reset successfully"}
 
+
 @app.get("/reset-password-enabled")
 async def is_reset_password_enabled():
+    """
+    Checks if the password reset functionality is enabled.
+
+    This endpoint provides a simple way to check if the application's password reset feature
+    is enabled or disabled. It can be used by frontend applications to conditionally display
+    password reset options.
+
+    Returns:
+        dict: A dictionary with a boolean value indicating if the password reset is enabled.
+    """
     return {"resetPasswordEnabled": RESET_PASSWORD}

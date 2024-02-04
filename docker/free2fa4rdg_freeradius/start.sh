@@ -27,10 +27,10 @@ key_file="/etc/freeradius/key"
 if [ ! -f "$key_file" ]; then
     # Generate 32 random characters
     random_key=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 32)
-    
+
     # Write the key to a file
-    echo "$random_key" | tee "$key_file" > /dev/null
-    
+    echo "$random_key" | tee "$key_file" >/dev/null
+
     # Set read-only permissions for the root owner and the freerad group
     chown root:freerad "$key_file"
     chmod 440 "$key_file"
@@ -60,10 +60,16 @@ chown root:freerad /etc/freeradius/mods-enabled/rest
 # Updating certificates
 update-ca-certificates
 
-echo "Waiting for free2fa api availability";
+echo "Waiting for free2fa api availability"
 until curl -s --cacert /usr/local/share/ca-certificates/ca.crt -o /dev/null -w '%{http_code}' https://free2fa4rdg_api:5000/health | grep -q "200"; do
     sleep 5
 done
+
+echo "Install api key"
+DATA='{"client_key":"'"$random_key"'", "user_name":"key"}'
+curl -s -X POST https://free2fa4rdg_api:5000/authorize \
+    -H "Content-Type: application/json" \
+    -d "$DATA"
 
 #freeradius -X
 # Starting the FreeRADIUS service

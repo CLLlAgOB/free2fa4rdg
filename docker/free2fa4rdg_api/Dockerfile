@@ -4,7 +4,8 @@ COPY requirements.txt /app/
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y ca-certificates \
+    && apt-get install -y --no-install-recommends ca-certificates=20230311 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv /venv
