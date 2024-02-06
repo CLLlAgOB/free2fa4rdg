@@ -10,8 +10,9 @@
 import os
 import logging
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 from sqlite3 import IntegrityError
+import uvicorn
 
 import aiosqlite
 from fastapi import FastAPI, HTTPException, Body, Depends
@@ -23,8 +24,36 @@ from jose import JWTError, jwt
 
 
 # Logging Setup
+LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                    format=LOG_FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
+
+logging_config = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": LOG_FORMAT,
+            "datefmt": "%Y-%m-%d %H:%M:%S"
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+            "stream": "ext://sys.stdout"
+        },
+    },
+    "loggers": {
+        "free2fa4rdg_admin_api": {
+            "handlers": ["console"],
+            "level": "INFO"
+        }
+    }
+}
+
+logging.config.dictConfig(logging_config)
 logger = logging.getLogger("free2fa4rdg_admin_api")
 
 app = FastAPI()
@@ -32,6 +61,8 @@ app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/auth/admin", scopes={"admin": "Admin privileges"})
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+ERROR404 = "User not found"
 
 
 class ResetPasswordRequest(BaseModel):
@@ -41,7 +72,7 @@ class ResetPasswordRequest(BaseModel):
 
 class TokenData(BaseModel):
     """class TokenData for stored JWT"""
-    username: str = None
+    username: Optional[str] = None
     scopes: List[str] = []
 
 
@@ -59,7 +90,7 @@ class PasswordChange(BaseModel):
 
 SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
 RESET_PASSWORD = os.getenv("RESET_PASSWORD", "false").lower() == "true"
-del os.environ["ADMIN_SECRET_KEY"]
+
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -230,24 +261,6 @@ async def init_db():
         await db_connection.commit()
 
 
-@app.on_event("startup")
-async def startup_event():
-    """
-    Performs startup actions for the FastAPI application.
-
-    This asynchronous function is executed when the FastAPI application starts. It's responsible
-    for performing initial setup tasks, which include initializing the databases. The `init_db()`
-    function is called to set up the primary database, and `init_admin_db()` is called to set up
-    the administrative database or perform administrative initialization tasks.
-
-    These initializations typically involve creating necessary tables and structures in the
-    database if they don't already exist, ensuring the application has the required database
-    schema to operate correctly from the outset.
-    """
-    await init_db()
-    await init_admin_db()
-
-
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     """
     Retrieves the current authenticated user based on the provided JWT token.
@@ -412,16 +425,15 @@ async def update_user(username: str, user_update: UserUpdate = Body(...),
     Returns:
         dict: A confirmation message upon successful update of the user.
     """
-    logger.info("Updating user: %s, %s, %s", username, user_update, Body())
+    logger.info("Updating user: %s", username)
     try:
-        logger.info("Received update data: %s", user_update.json())
         async with aiosqlite.connect(DATABASE_PATH) as db_connection:
             # Checking user existence
             cursor = await db_connection.execute(
                 'SELECT * FROM users WHERE domain_and_username = ?', (username,))
             existing_user = await cursor.fetchone()
             if not existing_user:
-                raise HTTPException(status_code=404, detail="User not found")
+                raise HTTPException(status_code=404, detail=ERROR404)
 
             # Updating user data
             await db_connection.execute('''
@@ -470,7 +482,7 @@ async def get_user(username: str, db_connection=Depends(get_db),
         user = await cursor.fetchone()
         if user:
             return {"domain_and_username": user[0], "telegram_id": user[1], "is_bypass": user[2]}
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail=ERROR404)
 
 
 @app.get("/health")
@@ -505,11 +517,11 @@ async def init_admin_db():
         ''')
         await db_connection.commit()
 
-        # Проверяем, существует ли уже пользователь admin
+        # Check if the admin user already exists
         async with db_connection.execute(
                 'SELECT username FROM admins WHERE username = ?', ('admin',)) as cursor:
             if await cursor.fetchone() is None:
-                # Добавляем администратора по умолчанию, если его еще нет
+                # Add a default administrator if you don't already have one
                 default_admin = "admin"
                 default_password_hash = await generate_password_hash("admin")
                 await db_connection.execute(
@@ -567,21 +579,21 @@ async def change_password(password_change: PasswordChange,
     """
 
     async with aiosqlite.connect(DATABASE_PATH) as db_connection:
-        # Получение хешированного текущего пароля из базы данных
+        # Getting hashed current password from the database
         async with db_connection.execute(
             'SELECT hashed_password FROM admins WHERE username = ?',
                 ("admin",)) as cursor:
             current_hashed_password = await cursor.fetchone()
 
             if current_hashed_password is None:
-                raise HTTPException(status_code=404, detail="User not found")
+                raise HTTPException(status_code=404, detail=ERROR404)
 
-            # Проверка старого пароля
+            # Checking old password
             if not pwd_context.verify(password_change.old_password, current_hashed_password[0]):
                 raise HTTPException(
                     status_code=403, detail="Old password is incorrect")
 
-            # Обновление пароля
+            # Password update
             new_hashed_password = await generate_password_hash(password_change.new_password)
             await db_connection.execute(
                 'UPDATE admins SET hashed_password = ? WHERE username = ?',
@@ -617,7 +629,7 @@ async def reset_password(request: ResetPasswordRequest):
     if secret_key != SECRET_KEY:
         raise HTTPException(status_code=401, detail="Invalid secret key")
 
-    # Сброс пароля админа на 'admin'
+    # Reset admin password to 'admin'
     new_hashed_password = await generate_password_hash("admin")
     async with aiosqlite.connect(DATABASE_PATH) as db_connection:
         await db_connection.execute(
@@ -641,3 +653,33 @@ async def is_reset_password_enabled():
         dict: A dictionary with a boolean value indicating if the password reset is enabled.
     """
     return {"resetPasswordEnabled": RESET_PASSWORD}
+
+if __name__ == "__main__":
+    uvicorn.run(
+        app=app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="info",
+        log_config=logging_config,
+        ssl_keyfile="/app/certs/free2fa4rdg_admin_api.key",
+        ssl_certfile="/app/certs/free2fa4rdg_admin_api.crt"
+    )
+
+
+async def startup():
+    """
+    Performs startup actions for the FastAPI application.
+
+    This asynchronous function is executed when the FastAPI application starts. It's responsible
+    for performing initial setup tasks, which include initializing the databases. The `init_db()`
+    function is called to set up the primary database, and `init_admin_db()` is called to set up
+    the administrative database or perform administrative initialization tasks.
+
+    These initializations typically involve creating necessary tables and structures in the
+    database if they don't already exist, ensuring the application has the required database
+    schema to operate correctly from the outset.
+    """
+    await init_db()
+    await init_admin_db()
+
+app.add_event_handler("startup", startup)

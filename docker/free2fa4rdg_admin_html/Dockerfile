@@ -8,7 +8,7 @@ RUN apt-get update \
     && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/* 
     
-COPY start.sh .
+COPY entrypoint.sh ./
 
 COPY ./files/ /usr/share/nginx/html/
 
@@ -16,6 +16,6 @@ COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 443
 
-RUN chmod +x start.sh
+RUN chmod +x ./entrypoint.sh
 
-ENTRYPOINT ["start.sh"]
+ENTRYPOINT ["./entrypoint.sh"]

@@ -114,7 +114,6 @@ The installation script has been tested on Ubuntu 22.04 LTS and CentOS 7. Howeve
 - `ALLOW_API_FAILURE_PASS`: (true/false) Allow users to pass without 2FA if `api.telegram.org` is unavailable.
 - `ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML`: DNS name of the admin website. It needs to be specified in DNS or hosts for convenient access.
 
-
 You will need to change your administrator password the first time you log in.
 
 ![screenshot](img/1-2.png)
