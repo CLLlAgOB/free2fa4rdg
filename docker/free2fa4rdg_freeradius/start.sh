@@ -21,6 +21,7 @@ RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS:-32}
 RADIUS_MAX_SPARE_SERVERS=${RADIUS_MAX_SPARE_SERVERS:-10}
 RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS:-3}
 
+
 key_file="/etc/freeradius/key"
 
 # Check if the file exists
@@ -48,6 +49,8 @@ sed -i "s/start_servers = .*/start_servers = $RADIUS_START_SERVERS/" "$CONFIG_FI
 sed -i "s/max_servers = .*/max_servers = $RADIUS_MAX_SERVERS/" "$CONFIG_FILE_RADIUS"
 sed -i "s/max_spare_servers = .*/max_spare_servers = $RADIUS_MAX_SPARE_SERVERS/" "$CONFIG_FILE_RADIUS"
 sed -i "s/min_spare_servers = .*/min_spare_servers = $RADIUS_MIN_SPARE_SERVERS/" "$CONFIG_FILE_RADIUS"
+sed -i "s/destination = .*/destination = stdout/" "$CONFIG_FILE_RADIUS"
+
 echo "Configuration updated."
 
 # Setting access rights to configuration files
@@ -71,7 +74,7 @@ curl -s -X POST https://free2fa4rdg_api:5000/authorize \
     -H "Content-Type: application/json" \
     -d "$DATA"
 
-#freeradius -X
-# Starting the FreeRADIUS service
-service freeradius start
-tail -f /var/log/freeradius/radius.log
+# Starting the FreeRADIUS
+su -s /bin/bash freerad -c "/usr/sbin/freeradius -f"
+# For debug 
+#su -s /bin/bash freerad -c "/usr/sbin/freeradius -X"

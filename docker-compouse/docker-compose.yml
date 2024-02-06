@@ -33,7 +33,6 @@ services:
         condition: service_started
     ports:
        - "443:443"
-    entrypoint: "./start.sh"
 
   free2fa4rdg_admin_api:
     restart: unless-stopped
@@ -67,12 +66,6 @@ services:
       - free2fa4rdg_ca_certs:/usr/local/share/ca-certificates/
     networks:
       - free2fa4rdg_network
-    command: >
-      /bin/sh -c "
-      mkdir -p /usr/share/nginx/html/certs;
-      cp -f /usr/local/share/ca-certificates/ca.crt /usr/share/nginx/html/certs/ca.crt;
-      update-ca-certificates;
-      exec python /app/main.py"
     depends_on:
       free2fa4rdg_setup:
         condition: service_healthy

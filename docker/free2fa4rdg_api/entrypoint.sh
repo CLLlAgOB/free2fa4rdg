@@ -1,5 +1,8 @@
-#!/bin/bash
+#!/bin/sh
+# change permission
+chown -R apiuser:apiuser /app/certs /opt/db;
+update-ca-certificates;
 
-update-ca-certificates
 
-exec python main.py
+# Starting the container's main command
+exec su -s /bin/sh apiuser -c "$*"

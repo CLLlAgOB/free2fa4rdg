@@ -121,9 +121,23 @@ class MessageLimiter:
 DATABASE_PATH = '/opt/db/users.db'
 
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT,
+                    datefmt="%Y-%m-%d %H:%M:%S")
 
 logger = logging.getLogger("free2fa4rdg")
+
+
+logging_config = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "()": "uvicorn.logging.DefaultFormatter",
+            "fmt": LOG_FORMAT,
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+}
 
 # =============DB============
 
@@ -424,6 +438,7 @@ async def main():
         host="0.0.0.0",
         port=5000,
         loop=loop,
+        log_config=logging_config,
         ssl_keyfile='/app/certs/free2fa4rdg_api.key',
         ssl_certfile='/app/certs/free2fa4rdg_api.crt'
     )
