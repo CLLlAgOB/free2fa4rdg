@@ -15,6 +15,7 @@ from sqlite3 import IntegrityError
 import uvicorn
 
 import aiosqlite
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Body, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
@@ -53,10 +54,35 @@ logging_config = {
     }
 }
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Executes at the start of the FastAPI application, handling initial setup tasks.
+    It's responsible for initializing databases, ensuring the application starts with
+    the necessary database structure. The `init_db()` function sets up the primary
+    database, while `init_admin_db()` prepares the administrative database. This setup
+    typically involves creating required tables and structures if they don't exist, thus
+    providing the essential database schema for the application to function properly
+    from the start.
+    """
+    await init_db()
+    await init_admin_db()
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
+# Setting up CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all sources
+    allow_credentials=True,
+    allow_methods=["POST", "GET", "PUT", "DELETE"],  # Allows method
+    allow_headers=["Content-Type", "Authorization"],  # Allows headers
+)
+
 logging.config.dictConfig(logging_config)
 logger = logging.getLogger("free2fa4rdg_admin_api")
-
-app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/auth/admin", scopes={"admin": "Admin privileges"})
@@ -94,15 +120,6 @@ RESET_PASSWORD = os.getenv("RESET_PASSWORD", "false").lower() == "true"
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-# Setting up CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all sources
-    allow_credentials=True,
-    allow_methods=["POST", "GET", "PUT", "DELETE"],  # Allows method
-    allow_headers=["Content-Type", "Authorization"],  # Allows headers
-)
 
 # Model for user data
 
@@ -425,7 +442,8 @@ async def update_user(username: str, user_update: UserUpdate = Body(...),
     Returns:
         dict: A confirmation message upon successful update of the user.
     """
-    logger.info("Updating user: %s", username)
+
+    logger.info("Updating user")
     try:
         async with aiosqlite.connect(DATABASE_PATH) as db_connection:
             # Checking user existence
@@ -654,6 +672,7 @@ async def is_reset_password_enabled():
     """
     return {"resetPasswordEnabled": RESET_PASSWORD}
 
+
 if __name__ == "__main__":
     uvicorn.run(
         app=app,
@@ -664,22 +683,3 @@ if __name__ == "__main__":
         ssl_keyfile="/app/certs/free2fa4rdg_admin_api.key",
         ssl_certfile="/app/certs/free2fa4rdg_admin_api.crt"
     )
-
-
-async def startup():
-    """
-    Performs startup actions for the FastAPI application.
-
-    This asynchronous function is executed when the FastAPI application starts. It's responsible
-    for performing initial setup tasks, which include initializing the databases. The `init_db()`
-    function is called to set up the primary database, and `init_admin_db()` is called to set up
-    the administrative database or perform administrative initialization tasks.
-
-    These initializations typically involve creating necessary tables and structures in the
-    database if they don't already exist, ensuring the application has the required database
-    schema to operate correctly from the outset.
-    """
-    await init_db()
-    await init_admin_db()
-
-app.add_event_handler("startup", startup)

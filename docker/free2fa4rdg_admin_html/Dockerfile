@@ -10,6 +10,8 @@ RUN apt-get update \
     
 COPY entrypoint.sh ./
 
+RUN chmod +x ./entrypoint.sh
+
 COPY ./files/ /usr/share/nginx/html/
 
 COPY ./nginx/nginx.conf /etc/nginx/nginx.conf

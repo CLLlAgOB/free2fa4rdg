@@ -3,10 +3,12 @@
 [![Docker Hub](https://img.shields.io/docker/pulls/clllagob/free2fa4rdg.svg?style=flat-square)][Docker Hub]
 [![License](https://img.shields.io/github/license/clllagob/free2fa4rdg.svg?style=flat-square)][License]
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/5b38ed1f5983438693f7ab92724d1282)][Codacy Badge]
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=CLLlAgOB_free2fa4rdg&metric=security_rating)][Security Rating]
 
-[Docker Hub]:      https://hub.docker.com/r/clllagob/free2fa4rdg
-[License]:         https://github.com/clllagob/free2fa4rdg/blob/master/LICENSE
-[Codacy Badge]:    https://app.codacy.com/gh/CLLlAgOB/free2fa4rdg/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
+[Docker Hub]:           https://hub.docker.com/r/clllagob/free2fa4rdg
+[License]:              https://github.com/clllagob/free2fa4rdg/blob/master/LICENSE
+[Codacy Badge]:         https://app.codacy.com/gh/CLLlAgOB/free2fa4rdg/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
+[Security Rating]:  https://sonarcloud.io/summary/new_code?id=CLLlAgOB_free2fa4rdg
 
 ![screenshot](img/1-0en.png)
 
