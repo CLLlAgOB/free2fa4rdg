@@ -49,22 +49,22 @@ last_message_info = {}
 
 def response_200():
     """Response api code 200 OK"""
-    return JSONResponse(status_code=200, content={"message": "OK"})
+    return JSONResponse(status_code=200, content={"Reply-Message": "OK"})
 
 
 def response_403():
     """Response api code 403 Forbidden"""
-    return JSONResponse(status_code=403, content={"message": "Forbidden"})
+    return JSONResponse(status_code=403, content={"Reply-Message": "Forbidden"})
 
 
 def response_404():
     """Response api code 404 Not Found"""
-    return JSONResponse(status_code=403, content={"message": "Not Found"})
+    return JSONResponse(status_code=403, content={"Reply-Message": "Not Found"})
 
 
 def response_408():
     """Response api code 408 Timeout"""
-    return JSONResponse(status_code=403, content={"message": "Timeout"})
+    return JSONResponse(status_code=403, content={"Reply-Message": "Timeout"})
 
 
 class ClientKeyStorage:
@@ -72,14 +72,17 @@ class ClientKeyStorage:
     _client_key = None
 
     @classmethod
-    def get_client_key(cls):
-        """Return API key"""
-        return cls._client_key
-
-    @classmethod
-    def set_client_key(cls, key):
-        """Set API key"""
-        cls._client_key = key
+    def verify_and_set_key(cls, key):
+        """Validates the key and sets it if it is the first key. Returns the validation status."""
+        if cls._client_key is None:
+            cls._client_key = key
+            logger.info("API KEY installed..")
+            return "set"
+        elif cls._client_key == key:
+            return "valid"
+        else:
+            logger.warning("Invalid API KEY")
+            return "invalid"
 
 
 class AuthorizeRequest(BaseModel):
@@ -183,14 +186,15 @@ async def create_new_user(domain_and_username, telegram_id, is_bypass=False):
 @app.post("/authenticate")
 async def authenticate_user(request: AuthenticateRequest):
     """Authenticate, waiting for a response."""
-    client_key = request.client_key
     # Checking API KEY
-    key = ClientKeyStorage.get_client_key()
-    if client_key != key or request.user_name == "":
-        logger.warning(
-            "Incorrect api key or empty username ")
-        return response_404()
+    client_key = request.client_key
+    key_status = ClientKeyStorage.verify_and_set_key(client_key)
 
+    if key_status == "invalid":
+        return response_403()
+    if key_status == "set" and request.user_name == "key":
+        return response_200()
+        
     normalized_username = request.user_name.lower()
     logger.debug("app.post authenticate  User verification: %s",
                  normalized_username)
@@ -231,18 +235,15 @@ async def authenticate_user(request: AuthenticateRequest):
 @app.post("/authorize")
 async def authorize_user(request: AuthorizeRequest):
     """Authorization, database search and request sending"""
+    # Checking API KEY
     client_key = request.client_key
-    key = ClientKeyStorage.get_client_key()
-    # Checking and saving API KEY
-    if key is None:
-        ClientKeyStorage.set_client_key(client_key)
-        logger.info("Install API_KEY done.")
-        if request.user_name == "key":
-            return response_200()
+    key_status = ClientKeyStorage.verify_and_set_key(client_key)
 
-    if client_key != key:
-        logger.warning("Wrong API_KEY")
-        return response_404()
+    if key_status == "invalid":
+        return response_403()
+    if key_status == "set" and request.user_name == "key":
+        return response_200()
+        
     if request.user_name != "":
         normalized_username = request.user_name.lower()
     else:
