@@ -202,24 +202,22 @@ async def authenticate_user(request: AuthenticateRequest):
     logger.debug("app.post authenticate  Found Telegram ID: %s", telegram_id)
 
     if telegram_id and telegram_id != 0 and not is_bypass:
-        return await handle_auth_with_wait(normalized_username, telegram_id)
+        return await handle_auth_with_wait(normalized_username)
     else:
         return await handle_auto_reg_or_bypass(normalized_username, telegram_id, is_bypass)
 
 
-async def handle_auth_with_wait(normalized_username, telegram_id):
+async def handle_auth_with_wait(normalized_username):
     """
     Waits for user authentication confirmation. Sends an authentication request
     and waits for a response for the specified time. Returns the appropriate HTTP response
     depending on the authentication result.
 
     :param normalized_username: Normalized username.
-    :param telegram_id: User ID in Telegram.
     :return: HTTPResponse depending on the authentication result.
     """
     wait_time = 1  # Initial waiting time
     max_wait_time = Config.FREE2FA_TIMEOUT
-    await send_auth_request(telegram_id, normalized_username)
 
     while wait_time <= max_wait_time and normalized_username not in auth_requests:
         logger.debug("Waiting for a response for %s seconds %.1f from %d",
@@ -278,7 +276,7 @@ async def authorize_user(request: AuthorizeRequest):
         return response_403()
     if key_status == "set" and request.user_name == "key":
         return response_200()
-    if not request.user_name:
+    if request.user_name == "":
         return response_404()
 
     normalized_username = request.user_name.lower()
