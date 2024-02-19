@@ -131,7 +131,7 @@ read -p "Enter ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML (default free2fa4rdg): " ADDIT
 create_env_file "$CA_EXPIRY_DAYS" "$FREE2FA_TELEGRAM_BOT_TOKEN" "$FREE2FA_TELEGRAM_BOT_LANGUAGE" "$FREE2FA_AUTO_REG_ENABLED" "$FREE2FA_BYPASS_ENABLED" "$RADIUS_CLIENT_SECRET" "$FREE2FA_TIMEOUT" "$RADIUS_START_SERVERS" "$RADIUS_MAX_SERVERS" "$RADIUS_MAX_SPARE_SERVERS" "$RADIUS_MIN_SPARE_SERVERS" "$ADMIN_SECRET_KEY" "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML"
 
 # Download docker-compose.yml
-curl -L "https://raw.githubusercontent.com/CLLlAgOB/free2fa4rdg/main/docker-compouse/docker-compose.yml" -o docker-compose.yml
+curl -L "https://raw.githubusercontent.com/CLLlAgOB/free2fa4rdg/main/docker-compose/docker-compose.yml" -o docker-compose.yml
 echo "docker-compose.yml downloaded."
 
 # Prompt to start the build
