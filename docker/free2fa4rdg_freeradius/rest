@@ -13,7 +13,7 @@ rest {
         body = 'json'
         data = '{ "user_name": "%{User-Name}", "client_key": "FREE2FA_API_KEY" }'
         tls = ${..tls}
-        timeout = 3
+        timeout = 8
     }
     authenticate {
         uri = "${..connect_uri}/authenticate"

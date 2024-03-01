@@ -36,7 +36,7 @@ router = Router()
 
 # FastAPI and aiogram initialization
 app = FastAPI()
-bot = Bot(token=Config.TOKEN, session=AiohttpSession(timeout=3))
+bot = Bot(token=Config.TOKEN, session=AiohttpSession(timeout=5))
 dp = Dispatcher()
 dp.include_router(router)
 
