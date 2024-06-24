@@ -346,12 +346,12 @@ async def send_auth_request(telegram_id, domain_and_username):
     except aiogram_exceptions.TelegramBadRequest as req_err:
         logger.warning(
             "TelegramBadRequest while sending message to %s: %s", telegram_id, req_err)
-    except aiogram_exceptions.TelegramNetworkError as network_err:
+    except (asyncio.TimeoutError, aiogram_exceptions.TelegramNetworkError) as network_err:
         logger.warning("Error when sending message: %s", network_err)
         if Config.ALLOW_API_FAILURE_PASS:
             auth_requests[normalized_username] = True
-            logger.warning("Allow access [%s] by API failure ClientConnectorError",
-                           normalized_username)
+            logger.warning("Allow access %s by API failure %s",
+                           normalized_username, network_err)
 
 
 async def delete_message(chat_id, message_id):
