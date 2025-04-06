@@ -119,3 +119,24 @@ The installation script has been tested on Ubuntu 22.04 LTS and CentOS 7. Howeve
 You will need to change your administrator password the first time you log in.
 
 ![screenshot](img/1-2.png)
+
+### Change History:
+
+**06.04.2025**  
+
+- The previous version is available by tag v1.0 in the docker hub.
+- Updated components and dependencies.  
+- Switched from docker-compose to docker compose.  
+- Added support for RADIUS Message Authenticator Attribute.
+
+**To upgrade from a previous version:**
+1. Host backup(not mandatory but desirable).
+2. In the .env file, add the line REQUIRE_MESSAGE_AUTHENTICATOR=true (preferably enable protection)
+3. If you enabled protection in REQUIRE_MESSAGE_AUTHENTICATOR=true then in NCP settings enable the checkbox to enable support for the authenticator attribute:   
+![screenshot](img/1-24.png)
+1. in the folder where docker-compose.yml is located, run the command under root:
+```shell
+sudo docker compose down -t 0
+sudo docker compose pull
+sudo docker compose up -d
+```

@@ -23,18 +23,6 @@ install_docker() {
     systemctl start docker
 }
 
-# Function to install Docker Compose
-install_docker_compose() {
-    echo "Installing Docker Compose..."
-    if [[ ":$PATH:" != *":/usr/local/bin:"* ]]; then
-        echo "Adding /usr/local/bin to your PATH"
-        export PATH=$PATH:/usr/local/bin
-        echo "export PATH=$PATH:/usr/local/bin" >> ~/.bashrc
-    fi
-    curl -L "https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
-}
-
 # Function to generate a random key
 generate_random_key() {
     tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 32 | head -n 1
@@ -60,6 +48,7 @@ ALLOW_API_FAILURE_PASS=${14:-true}
 RESET_PASSWORD=${15:-false}
 ALLOW_API_FAILURE_PASS=${16:-false}
 ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML=${17:-free2fa4rdg}
+REQUIRE_MESSAGE_AUTHENTICATOR=${18:-true}
 EOF
 }
 
@@ -70,14 +59,6 @@ if ! [ -x "$(command -v docker)" ]; then
     read install_docker_choice
     if [ "$install_docker_choice" = "y" ]; then
         install_docker
-    fi
-fi
-
-if ! [ -x "$(command -v docker-compose)" ]; then
-    echo "Docker Compose is not installed. Install it? (y/n)"
-    read install_compose_choice
-    if [ "$install_compose_choice" = "y" ]; then
-        install_docker_compose
     fi
 fi
 
@@ -127,8 +108,12 @@ read -p "Enter ALLOW_API_FAILURE_PASS (default false):" ALLOW_API_FAILURE_PASS
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML: DNS name that will be added to the self-signed certificate."
 read -p "Enter ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML (default free2fa4rdg): " ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "REQUIRE_MESSAGE_AUTHENTICATOR: Require mandatory Message-Authenticator attribute in RADIUS messages (default true)"
+read -p "Enter REQUIRE_MESSAGE_AUTHENTICATOR (default true): " REQUIRE_MESSAGE_AUTHENTICATOR
 
-create_env_file "$CA_EXPIRY_DAYS" "$FREE2FA_TELEGRAM_BOT_TOKEN" "$FREE2FA_TELEGRAM_BOT_LANGUAGE" "$FREE2FA_AUTO_REG_ENABLED" "$FREE2FA_BYPASS_ENABLED" "$RADIUS_CLIENT_SECRET" "$FREE2FA_TIMEOUT" "$RADIUS_START_SERVERS" "$RADIUS_MAX_SERVERS" "$RADIUS_MAX_SPARE_SERVERS" "$RADIUS_MIN_SPARE_SERVERS" "$ADMIN_SECRET_KEY" "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML"
+
+create_env_file "$CA_EXPIRY_DAYS" "$FREE2FA_TELEGRAM_BOT_TOKEN" "$FREE2FA_TELEGRAM_BOT_LANGUAGE" "$FREE2FA_AUTO_REG_ENABLED" "$FREE2FA_BYPASS_ENABLED" "$RADIUS_CLIENT_SECRET" "$FREE2FA_TIMEOUT" "$RADIUS_START_SERVERS" "$RADIUS_MAX_SERVERS" "$RADIUS_MAX_SPARE_SERVERS" "$RADIUS_MIN_SPARE_SERVERS" "$ADMIN_SECRET_KEY" "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML" "$REQUIRE_MESSAGE_AUTHENTICATOR"
 
 # Download docker-compose.yml
 curl -L "https://raw.githubusercontent.com/CLLlAgOB/free2fa4rdg/main/docker-compose/docker-compose.yml" -o docker-compose.yml
@@ -136,6 +121,6 @@ echo "docker-compose.yml downloaded."
 
 # Prompt to start the build
 echo "To start enter"
-echo "docker-compose up -d"
+echo "docker compose up -d"
 echo "To view logs enter"
-echo "docker-compose logs -f"
+echo "docker compose logs -f"

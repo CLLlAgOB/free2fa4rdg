@@ -1,4 +1,5 @@
-FROM freeradius/freeradius-server:3.2.3
+FROM freeradius/freeradius-server:latest 
+#freeradius-server:3.2.7 - tested
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

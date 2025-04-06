@@ -15,6 +15,7 @@ CONFIG_FILE_REST="/etc/freeradius/mods-enabled/rest"
 
 # Default values
 CLIENT_SECRET=${RADIUS_CLIENT_SECRET:-"test123"}
+REQUIRE_MESSAGE_AUTHENTICATOR=${REQUIRE_MESSAGE_AUTHENTICATOR:-"true"}
 RADIUS_CLIENT_TIMEOUT=${RADIUS_CLIENT_TIMEOUT:-10}
 RADIUS_START_SERVERS=${RADIUS_START_SERVERS:-5}
 RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS:-32}
@@ -42,6 +43,8 @@ fi
 
 # Updating configuration files
 sed -i "s/secret = .*/secret = $CLIENT_SECRET/" "$CONFIG_FILE_CLIENT"
+sed -i "s/require_message_authenticator = .*/require_message_authenticator = $REQUIRE_MESSAGE_AUTHENTICATOR/" "$CONFIG_FILE_CLIENT"
+sed -i "s/limit_proxy_state = .*/limit_proxy_state = $REQUIRE_MESSAGE_AUTHENTICATOR/" "$CONFIG_FILE_CLIENT"
 sed -i "/^rest {/,/^}/ s/connect_timeout = .*/connect_timeout = $((RADIUS_CLIENT_TIMEOUT + 3))/" "$CONFIG_FILE_REST"
 sed -i "/^rest {/,/^}/ { /    authenticate {/,/    }/ s/timeout = .*/timeout = $((RADIUS_CLIENT_TIMEOUT + 3))/ }" "$CONFIG_FILE_REST"
 sed -i "s/\"client_key\": \".*\"/\"client_key\": \"$random_key\"/" "$CONFIG_FILE_REST"

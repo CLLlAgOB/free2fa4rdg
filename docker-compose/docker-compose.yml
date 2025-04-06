@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   free2fa4rdg_setup:
     image: clllagob/free2fa4rdg:setup_latest
@@ -80,6 +78,7 @@ services:
       - RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS}
       - RADIUS_MAX_SPARE_SERVERS=${RADIUS_MAX_SPARE_SERVERS}
       - RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS}
+      - REQUIRE_MESSAGE_AUTHENTICATOR=${REQUIRE_MESSAGE_AUTHENTICATOR}
     depends_on:
       - free2fa4rdg_api
     networks:
