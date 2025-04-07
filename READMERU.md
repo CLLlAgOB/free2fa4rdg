@@ -133,10 +133,22 @@ Free2FA4RDG состоит из нескольких микросервисов,
 2. В файл .env добавить строчку REQUIRE_MESSAGE_AUTHENTICATOR=true (желательно включить защиту)
 3. Если включили защиту в REQUIRE_MESSAGE_AUTHENTICATOR=true то в настройках NCP включить галку для включения поддержка атрибута аутентификатора:   
 ![screenshot](img/1-24.png)
-4. в папке где лежит docker-compose.yml выполните команду под рутом:
+1. Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
+
+**07.04.2025**
+
+В admin_api:
+- Исправлено DeprecationWarning: datetime.datetime.utcnow()
+- Ошибка 'bcrypt' has no attribute '__about__'
+
+Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
+
+
+## How to update
+
+1. в папке где лежит docker-compose.yml выполните команду под рутом:
 ```shell
 sudo docker compose down -t 0
 sudo docker compose pull
 sudo docker compose up -d
 ```
-

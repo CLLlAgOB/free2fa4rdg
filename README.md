@@ -134,6 +134,18 @@ You will need to change your administrator password the first time you log in.
 2. In the .env file, add the line REQUIRE_MESSAGE_AUTHENTICATOR=true (preferably enable protection)
 3. If you enabled protection in REQUIRE_MESSAGE_AUTHENTICATOR=true then in NCP settings enable the checkbox to enable support for the authenticator attribute:   
 ![screenshot](img/1-24.png)
+4. Update the components using the [How to update](#how-to-update) instructions.
+
+**07.04.2025**
+
+In admin_api:
+- Fixed DeprecationWarning: datetime.datetime.utcnow()
+- Fixed Error 'bcrypt' has no attribute '__about__'
+Update the components using the [How to update](#how-to-update) instructions.
+
+
+## How to update
+
 1. in the folder where docker-compose.yml is located, run the command under root:
 ```shell
 sudo docker compose down -t 0
