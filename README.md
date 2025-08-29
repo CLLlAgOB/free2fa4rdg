@@ -115,7 +115,9 @@ The installation script has been tested on Ubuntu 22.04 LTS and CentOS 7. Howeve
 - `RESET_PASSWORD`: Enabling password reset function (to reset, you will need to specify ADMIN_SECRET_KEY).
 - `ALLOW_API_FAILURE_PASS`: (true/false) Allow users to pass without 2FA if `api.telegram.org` is unavailable.
 - `ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML`: DNS name of the admin website. It needs to be specified in DNS or hosts for convenient access.
-
+- `FREE2FA_CACHE_ENABLED`: (true/false) Enables or disables the computer's memory after successful two-factor authentication.
+- `FREE2FA_CACHE_TTL`: The time (in seconds) for which the computer is considered trusted. The default is 32,400 seconds = 9 hours.
+- 
 You will need to change your administrator password the first time you log in.
 
 ![screenshot](img/1-2.png)
@@ -142,6 +144,41 @@ In admin_api:
 - Fixed DeprecationWarning: datetime.datetime.utcnow()
 - Fixed Error 'bcrypt' has no attribute '__about__'
 Update the components using the [How to update](#how-to-update) instructions.
+
+**29.08.2025**
+Added the ability to cache the second factor (remembering the computer for a certain period of time).
+Added new variables:
+- FREE2FA_CACHE_ENABLED=true - (true/false) Enables or disables the computer's memory after successful two-factor authentication.
+- FREE2FA_CACHE_TTL=32400  - The time (in seconds) for which the computer is considered trusted. The default is 32,400 seconds = 9 hours.
+
+Additional steps to update from a previous version:  
+  Add new variables to the .env file and docker-compose.yml
+
+Add the following to the end of the .env file:
+
+```shell
+FREE2FA_CACHE_ENABLED=true
+FREE2FA_CACHE_TTL=32400
+```
+Add the following to the environment: docker-compose.yml section:
+- FREE2FA_CACHE_ENABLED=${FREE2FA_CACHE_ENABLED:-true}
+- FREE2FA_CACHE_TTL=${FREE2FA_CACHE_TTL:-32400}
+
+```shell
+free2fa4rdg_freeradius:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:freeradius_latest
+    environment:
+      - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET}
+      - RADIUS_CLIENT_TIMEOUT=${FREE2FA_TIMEOUT}
+      - RADIUS_START_SERVERS=${RADIUS_START_SERVERS}
+      - RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS}
+      - RADIUS_MAX_SPARE_SERVERS=${RADIUS_MAX_SPARE_SERVERS}
+      - RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS}
+      - FREE2FA_CACHE_ENABLED=${FREE2FA_CACHE_ENABLED:-true}
+      - FREE2FA_CACHE_TTL=${FREE2FA_CACHE_TTL:-32400}
+```
+Update the components using the [How to update](#how-to-update) instructions.  
 
 
 ## How to update

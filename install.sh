@@ -49,6 +49,8 @@ RESET_PASSWORD=${15:-false}
 ALLOW_API_FAILURE_PASS=${16:-false}
 ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML=${17:-free2fa4rdg}
 REQUIRE_MESSAGE_AUTHENTICATOR=${18:-true}
+FREE2FA_CACHE_ENABLED=${17:-true}
+FREE2FA_CACHE_TTL=${18:-32400}
 EOF
 }
 
@@ -111,9 +113,21 @@ read -p "Enter ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML (default free2fa4rdg): " ADDIT
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "REQUIRE_MESSAGE_AUTHENTICATOR: Require mandatory Message-Authenticator attribute in RADIUS messages (default true)"
 read -p "Enter REQUIRE_MESSAGE_AUTHENTICATOR (default true): " REQUIRE_MESSAGE_AUTHENTICATOR
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "FREE2FA_CACHE_ENABLED: Enable/disable user cache (default true)"
+read -p "Enter FREE2FA_CACHE_ENABLED (default true): " FREE2FA_CACHE_ENABLED
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "FREE2FA_CACHE_TTL: Cache lifetime in seconds (default 32400 ≈ 9h)"
+read -p "Enter FREE2FA_CACHE_TTL (default 32400): " FREE2FA_CACHE_TTL
 
 
-create_env_file "$CA_EXPIRY_DAYS" "$FREE2FA_TELEGRAM_BOT_TOKEN" "$FREE2FA_TELEGRAM_BOT_LANGUAGE" "$FREE2FA_AUTO_REG_ENABLED" "$FREE2FA_BYPASS_ENABLED" "$RADIUS_CLIENT_SECRET" "$FREE2FA_TIMEOUT" "$RADIUS_START_SERVERS" "$RADIUS_MAX_SERVERS" "$RADIUS_MAX_SPARE_SERVERS" "$RADIUS_MIN_SPARE_SERVERS" "$ADMIN_SECRET_KEY" "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML" "$REQUIRE_MESSAGE_AUTHENTICATOR"
+create_env_file \
+  "$CA_EXPIRY_DAYS" "$FREE2FA_TELEGRAM_BOT_TOKEN" "$FREE2FA_TELEGRAM_BOT_LANGUAGE" \
+  "$FREE2FA_AUTO_REG_ENABLED" "$FREE2FA_BYPASS_ENABLED" "$RADIUS_CLIENT_SECRET" \
+  "$FREE2FA_TIMEOUT" "$RADIUS_START_SERVERS" "$RADIUS_MAX_SERVERS" \
+  "$RADIUS_MAX_SPARE_SERVERS" "$RADIUS_MIN_SPARE_SERVERS" "$ADMIN_SECRET_KEY" \
+  "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML" \
+  "$REQUIRE_MESSAGE_AUTHENTICATOR" "$FREE2FA_CACHE_ENABLED" "$FREE2FA_CACHE_TTL"
 
 # Download docker-compose.yml
 curl -L "https://raw.githubusercontent.com/CLLlAgOB/free2fa4rdg/main/docker-compose/docker-compose.yml" -o docker-compose.yml

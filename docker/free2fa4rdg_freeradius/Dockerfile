@@ -11,6 +11,7 @@ COPY start.sh /start.sh
 COPY default /etc/freeradius/sites-available/default
 COPY clients.conf /etc/freeradius/clients.conf
 COPY rest /etc/freeradius/mods-enabled/rest
+COPY cache_2fa /etc/freeradius/mods-available/cache_2fa
 
 RUN chmod +x /start.sh
 

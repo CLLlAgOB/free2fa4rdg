@@ -1,39 +1,77 @@
 server radius1812 {
-listen {
+
+    listen {
         type = auth
         ipaddr = *
         port = 1812
         limit {
-              max_connections = 50
-              lifetime = 0
-              idle_timeout = 30
-        }
-}
-
-authorize {
-    rest
-    if (!&User-Password) {
-        update control {
-            Auth-Type := REST
-        }
-        update request {
-            User-Password := "dummy_password"
+            max_connections = 50
+            lifetime = 0
+            idle_timeout = 30
         }
     }
-}
 
-#  Authentication.
-authenticate {
-    Auth-Type rest {
-        rest {
-            updated = 1
-        }
+    authorize {
+        #
+        # === КЭШ 2FA (включается через sed: снимаем префикс '#CACHE2FA_ENABLED ') ===
+        #
+        #CACHE2FA_ENABLED update control { Cache-Status-Only := yes }
+        #CACHE2FA_ENABLED cache_2fa
+        #CACHE2FA_ENABLED if (ok) {
+        #CACHE2FA_ENABLED     update control { Auth-Type := Accept }
+        #CACHE2FA_ENABLED     accept
+        #CACHE2FA_ENABLED }
+
+        #
+        # Нет в кэше — это «реальная» 2FA
+        #
+        update control { Tmp-Integer-0 := 1 }
+
+        #
+        # Твой REST /authorize (rlm_rest в mods-enabled/rest)
+        #
+        rest
         if (updated) {
+            if (!&request:User-Password) {
+                update request { User-Password := "dummy_password" }
+            }
+            update control { Auth-Type := rest }
+        } else {
+            reject
+        }
+    }
+
+    authenticate {
+        #
+        # Быстрый проход, если authorize выставил Auth-Type := Accept
+        #
+        Auth-Type Accept {
             ok
         }
+
+        #
+        # Основная аутентификация через REST /authenticate
+        #
+        Auth-Type rest {
+            rest
+            if (updated) {
+                ok
+            } else {
+                reject
+            }
+        }
     }
-}
 
-
-
+    post-auth {
+        #
+        # === ЗАПИСЬ В КЭШ 2FA (включается через sed) ===
+        #
+        #CACHE2FA_ENABLED if (&reply:Packet-Type == Access-Accept && &control:Tmp-Integer-0) {
+        #CACHE2FA_ENABLED     update control {
+        #CACHE2FA_ENABLED         Cache-Status-Only := no
+        #CACHE2FA_ENABLED         Cache-TTL := %{env:FREE2FA_CACHE_TTL:-32400}   # 9ч по умолчанию
+        #CACHE2FA_ENABLED     }
+        #CACHE2FA_ENABLED     cache_2fa
+        #CACHE2FA_ENABLED }
+    }
 }

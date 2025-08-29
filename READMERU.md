@@ -114,6 +114,8 @@ Free2FA4RDG состоит из нескольких микросервисов,
 - `RESET_PASSWORD`: Включение функции сброса пароля(для сброса потребуется указать ADMIN_SECRET_KEY).
 - `ALLOW_API_FAILURE_PASS`: (true/false) Пускать пользователей без 2FA, если `api.telegram.org` недоступен. 
 - `ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML`: ДНС имя веб сайта админки. Необходимо прописать его в днс или hosts для удобства доступа.
+- `FREE2FA_CACHE_ENABLED`: (true/false) включает или отключает запоминание компьютера после успешного подтверждения второго фактора. 
+- `FREE2FA_CACHE_TTL`: время (в секундах), на которое компьютер считается доверенным. По умолчанию 32400 секунд = 9 часов.
 
 При первом входе необходимо будет сменить пароль администратора.
 
@@ -141,6 +143,41 @@ Free2FA4RDG состоит из нескольких микросервисов,
 - Исправлено DeprecationWarning: datetime.datetime.utcnow()
 - Ошибка 'bcrypt' has no attribute '__about__'
 
+Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
+
+**29.08.2025**
+Добавлена возможность кэширования второго фактора (запоминание компьютера на определённое время).
+Добавлены новые переменные:
+- FREE2FA_CACHE_ENABLED=true - (true/false) включает или отключает запоминание компьютера после успешного подтверждения второго фактора.
+- FREE2FA_CACHE_TTL=32400 - время (в секундах), на которое компьютер считается доверенным. По умолчанию 32400 секунд = 9 часов.
+
+Дополнительные действия для обновления с предыдущей версии:  
+  Добавить новые переменные в файл .env и docker-compose.yml
+
+В конец файла .env добавим:
+
+```shell
+FREE2FA_CACHE_ENABLED=true
+FREE2FA_CACHE_TTL=32400
+```
+В секцию environment: docker-compose.yml добавим:
+- FREE2FA_CACHE_ENABLED=${FREE2FA_CACHE_ENABLED:-true}
+- FREE2FA_CACHE_TTL=${FREE2FA_CACHE_TTL:-32400}
+
+```shell
+free2fa4rdg_freeradius:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:freeradius_latest
+    environment:
+      - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET}
+      - RADIUS_CLIENT_TIMEOUT=${FREE2FA_TIMEOUT}
+      - RADIUS_START_SERVERS=${RADIUS_START_SERVERS}
+      - RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS}
+      - RADIUS_MAX_SPARE_SERVERS=${RADIUS_MAX_SPARE_SERVERS}
+      - RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS}
+      - FREE2FA_CACHE_ENABLED=${FREE2FA_CACHE_ENABLED:-true}
+      - FREE2FA_CACHE_TTL=${FREE2FA_CACHE_TTL:-32400}
+```
 Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
 
 
