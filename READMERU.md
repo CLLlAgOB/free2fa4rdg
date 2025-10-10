@@ -82,7 +82,7 @@ Free2FA4RDG состоит из нескольких микросервисов,
 
 ### Настройка NPS
 
-![скрин](img/1-23.png)
+![скрин](img/1-1.png)
 
 
 1. Создайте новую группу в разделе Remote RADIUS Server Groups:
@@ -91,7 +91,7 @@ Free2FA4RDG состоит из нескольких микросервисов,
    - Shared secret: Ваш секрет, который будет в файле .env (`RADIUS_CLIENT_SECRET`).
    - Load Balancing: поставьте таймауты по 60 секунд
 
-![скрин](img/1-3.png)
+![скрин](img/1-23.png)
 
 2. В Connection Requests Policies откройте свойства политики `TS GATEWAY AUTHORIZATION POLICY` и установите `Forward requests to the following remote RADIUS server group for authentication: free2fa4rdg`.
 
@@ -114,6 +114,7 @@ Free2FA4RDG состоит из нескольких микросервисов,
 - `RESET_PASSWORD`: Включение функции сброса пароля(для сброса потребуется указать ADMIN_SECRET_KEY).
 - `ALLOW_API_FAILURE_PASS`: (true/false) Пускать пользователей без 2FA, если `api.telegram.org` недоступен. 
 - `ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML`: ДНС имя веб сайта админки. Необходимо прописать его в днс или hosts для удобства доступа.
+- `REQUIRE_MESSAGE_AUTHENTICATOR`: (true/false) Требовать атрибут Message-Authenticator для проверки подлинности RADIUS-пакетов.
 - `FREE2FA_CACHE_ENABLED`: (true/false) включает или отключает запоминание компьютера после успешного подтверждения второго фактора. 
 - `FREE2FA_CACHE_TTL`: время (в секундах), на которое компьютер считается доверенным. По умолчанию 32400 секунд = 9 часов.
 

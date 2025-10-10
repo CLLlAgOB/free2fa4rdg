@@ -115,9 +115,10 @@ The installation script has been tested on Ubuntu 22.04 LTS and CentOS 7. Howeve
 - `RESET_PASSWORD`: Enabling password reset function (to reset, you will need to specify ADMIN_SECRET_KEY).
 - `ALLOW_API_FAILURE_PASS`: (true/false) Allow users to pass without 2FA if `api.telegram.org` is unavailable.
 - `ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML`: DNS name of the admin website. It needs to be specified in DNS or hosts for convenient access.
+- `REQUIRE_MESSAGE_AUTHENTICATOR`: (true/false) Require the Message-Authenticator attribute to authenticate RADIUS packets.
 - `FREE2FA_CACHE_ENABLED`: (true/false) Enables or disables the computer's memory after successful two-factor authentication.
 - `FREE2FA_CACHE_TTL`: The time (in seconds) for which the computer is considered trusted. The default is 32,400 seconds = 9 hours.
-- 
+
 You will need to change your administrator password the first time you log in.
 
 ![screenshot](img/1-2.png)
