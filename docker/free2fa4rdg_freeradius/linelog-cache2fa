@@ -1,0 +1,4 @@
+linelog cache2fa_hit {
+    filename = /dev/stdout
+    format = "%S - Authentication request accepted by user %{User-Name} (2FA cache hit) from %{%{Packet-Src-IP-Address}:-%{Packet-Src-IPv6-Address}}"
+}

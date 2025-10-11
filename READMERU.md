@@ -117,7 +117,7 @@ Free2FA4RDG состоит из нескольких микросервисов,
 - `REQUIRE_MESSAGE_AUTHENTICATOR`: (true/false) Требовать атрибут Message-Authenticator для проверки подлинности RADIUS-пакетов.
 - `FREE2FA_CACHE_ENABLED`: (true/false) включает или отключает запоминание компьютера после успешного подтверждения второго фактора. 
 - `FREE2FA_CACHE_TTL`: время (в секундах), на которое компьютер считается доверенным. По умолчанию 32400 секунд = 9 часов.
-
+- `FREE2FA_DEBUG_ENABLED`: (true/false) Включить выключить режим отладки для FreeRadius.
 При первом входе необходимо будет сменить пароль администратора.
 
 ![screenshot](img/1-2.png)
@@ -181,6 +181,41 @@ free2fa4rdg_freeradius:
 ```
 Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
 
+
+**11.10.2025**
+
+- Добавлено возможность включить отладку freeradius (в файле окружения .env FREE2FA_DEBUG_ENABLED=true)
+- Добавлено логирование при попадании пользователем в кэш.
+- Исправлены незначительные ошибки.
+  
+
+Дополнительные действия для обновления с предыдущей версии:  
+  Добавить новые переменные в файл .env и docker-compose.yml
+
+В конец файла .env добавим:
+
+```shell
+FREE2FA_DEBUG_ENABLED=false
+```
+В секцию environment: docker-compose.yml добавим:
+- FREE2FA_DEBUG_ENABLED=${FREE2FA_DEBUG_ENABLED:-false}
+  
+```shell
+free2fa4rdg_freeradius:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:freeradius_latest
+    environment:
+      - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET}
+      - RADIUS_CLIENT_TIMEOUT=${FREE2FA_TIMEOUT}
+      - RADIUS_START_SERVERS=${RADIUS_START_SERVERS}
+      - RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS}
+      - RADIUS_MAX_SPARE_SERVERS=${RADIUS_MAX_SPARE_SERVERS}
+      - RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS}
+      - FREE2FA_CACHE_ENABLED=${FREE2FA_CACHE_ENABLED:-true}
+      - FREE2FA_CACHE_TTL=${FREE2FA_CACHE_TTL:-32400}
+      - FREE2FA_DEBUG_ENABLED=${FREE2FA_DEBUG_ENABLED:-false}
+```
+Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
 
 ## How to update
 

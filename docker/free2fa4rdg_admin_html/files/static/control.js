@@ -199,7 +199,7 @@ async function loadUsers() {
     const usersTableBody = document.querySelector("#usersTable tbody");
 
     while (usersTableBody.firstChild) {
-      usersTableBody.removeChild(usersTableBody.firstChild);
+      usersTableBody.firstChild.remove();
     }
 
     users.forEach((user) => {
