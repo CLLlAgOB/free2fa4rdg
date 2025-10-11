@@ -182,6 +182,41 @@ free2fa4rdg_freeradius:
 Update the components using the [How to update](#how-to-update) instructions.  
 
 
+**11.10.2025**
+
+- Added the ability to enable FreeRadius debugging (set FREE2FA_DEBUG_ENABLED=true in the .env environment file)
+- Added logging when a user hits the cache.
+- Minor bugs fixed.
+  
+
+Additional steps to update from a previous version:  
+  Add new variables to the .env file and docker-compose.yml
+
+Add the following to the end of the .env file:
+
+```shell
+FREE2FA_DEBUG_ENABLED=false
+```
+Add the following to the environment: docker-compose.yml section:
+- FREE2FA_DEBUG_ENABLED=${FREE2FA_DEBUG_ENABLED:-false}
+  
+```shell
+free2fa4rdg_freeradius:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:freeradius_latest
+    environment:
+      - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET}
+      - RADIUS_CLIENT_TIMEOUT=${FREE2FA_TIMEOUT}
+      - RADIUS_START_SERVERS=${RADIUS_START_SERVERS}
+      - RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS}
+      - RADIUS_MAX_SPARE_SERVERS=${RADIUS_MAX_SPARE_SERVERS}
+      - RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS}
+      - FREE2FA_CACHE_ENABLED=${FREE2FA_CACHE_ENABLED:-true}
+      - FREE2FA_CACHE_TTL=${FREE2FA_CACHE_TTL:-32400}
+      - FREE2FA_DEBUG_ENABLED=${FREE2FA_DEBUG_ENABLED:-false}
+```
+Update the components using the [How to update](#how-to-update) instructions.
+
 ## How to update
 
 1. in the folder where docker-compose.yml is located, run the command under root:

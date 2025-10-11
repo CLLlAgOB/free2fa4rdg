@@ -51,6 +51,7 @@ ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML=${17:-free2fa4rdg}
 REQUIRE_MESSAGE_AUTHENTICATOR=${18:-true}
 FREE2FA_CACHE_ENABLED=${17:-true}
 FREE2FA_CACHE_TTL=${18:-32400}
+FREE2FA_DEBUG_ENABLED${19:-false}
 EOF
 }
 
@@ -119,6 +120,9 @@ read -p "Enter FREE2FA_CACHE_ENABLED (default true): " FREE2FA_CACHE_ENABLED
 echo "---------------------------------------------------------------------------------------------------------------"
 echo "FREE2FA_CACHE_TTL: Cache lifetime in seconds (default 32400 ≈ 9h)"
 read -p "Enter FREE2FA_CACHE_TTL (default 32400): " FREE2FA_CACHE_TTL
+echo "---------------------------------------------------------------------------------------------------------------"
+echo "FREE2FA_DEBUG_ENABLED: Enable debug (default false)"
+read -p "Enter FREE2FA_DEBUG_ENABLED (default false): " FREE2FA_DEBUG_ENABLED
 
 
 create_env_file \
@@ -127,7 +131,8 @@ create_env_file \
   "$FREE2FA_TIMEOUT" "$RADIUS_START_SERVERS" "$RADIUS_MAX_SERVERS" \
   "$RADIUS_MAX_SPARE_SERVERS" "$RADIUS_MIN_SPARE_SERVERS" "$ADMIN_SECRET_KEY" \
   "$RESET_PASSWORD" "$ALLOW_API_FAILURE_PASS" "$ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML" \
-  "$REQUIRE_MESSAGE_AUTHENTICATOR" "$FREE2FA_CACHE_ENABLED" "$FREE2FA_CACHE_TTL"
+  "$REQUIRE_MESSAGE_AUTHENTICATOR" "$FREE2FA_CACHE_ENABLED" "$FREE2FA_CACHE_TTL" \
+  "$FREE2FA_DEBUG_ENABLED"
 
 # Download docker-compose.yml
 curl -L "https://raw.githubusercontent.com/CLLlAgOB/free2fa4rdg/main/docker-compose/docker-compose.yml" -o docker-compose.yml
