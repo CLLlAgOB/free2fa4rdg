@@ -217,6 +217,14 @@ free2fa4rdg_freeradius:
 ```
 Update the components using the [How to update](#how-to-update) instructions.
 
+**17.10.2025**
+
+- Minor code update and readability improvements.
+- Modern JavaScript features are used (e.g., `replaceChildren()`, `String.raw`, `optional chaining`).
+- ⚠️ **Important:** The admin panel no longer supports outdated browsers (including IE11 and older versions of Android WebView).
+
+Update your components using the instructions in [How to update](#how-to-update).
+
 ## How to update
 
 1. in the folder where docker-compose.yml is located, run the command under root:

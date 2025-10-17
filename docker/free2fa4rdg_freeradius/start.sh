@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # start.sh
-# Copyright (C) 2024 Voloskov Aleksandr Nikolaevich
+# Copyright (C) 2025 Voloskov Aleksandr Nikolaevich
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,16 +57,16 @@ sed -i "s/destination = .*/destination = stdout/" "$CONFIG_FILE_RADIUS"
 echo "Configuration updated."
 
 # Setting access rights to configuration files
-chmod 440 /etc/freeradius/clients.conf
-chmod 440 /etc/freeradius/sites-enabled/default
-chmod 440 /etc/freeradius/mods-enabled/rest
-chmod 440 /etc/freeradius/mods-enabled/cache_2fa
-chmod 440 /etc/freeradius/mods-available/linelog-cache2fa
-chown root:freerad /etc/freeradius/clients.conf
-chown root:freerad /etc/freeradius/sites-enabled/default
-chown root:freerad /etc/freeradius/mods-enabled/rest
-chown root:freerad /etc/freeradius/mods-available/cache_2fa
-chown root:freerad /etc/freeradius/mods-available/linelog-cache2fa
+FILES=(
+  /etc/freeradius/clients.conf
+  /etc/freeradius/sites-enabled/default
+  /etc/freeradius/mods-enabled/rest
+  /etc/freeradius/mods-available/cache_2fa
+  /etc/freeradius/mods-available/linelog-cache2fa
+)
+
+chown root:freerad "${FILES[@]}"
+chmod 0440       "${FILES[@]}"
 
 # Updating certificates
 update-ca-certificates
@@ -110,6 +110,3 @@ if [ "${FREE2FA_DEBUG_ENABLED,,}" = "true" ]; then
 else
     su -s /bin/bash freerad -c "/usr/sbin/freeradius -f"
 fi
-
-# For debug 
-#su -s /bin/bash freerad -c "/usr/sbin/freeradius -X"
