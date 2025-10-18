@@ -72,7 +72,10 @@ if ! [[ -x "$(command -v docker)" ]]; then
     fi
 fi
 SEP=$(printf '%0.s-' {1..111})
-sep() { echo "$SEP"; }
+sep() {
+  printf '%s\n' "$SEP"
+  return $?
+}
 
 # Input parameters for the .env file
 echo "Please enter the following parameters for the .env file. Press Enter to use the default value."

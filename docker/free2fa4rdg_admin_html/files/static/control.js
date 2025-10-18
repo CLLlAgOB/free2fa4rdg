@@ -63,7 +63,6 @@ document.getElementById("changePasswordForm").addEventListener("submit", functio
     changePassword(oldPassword, newPassword);
   } else {
     document.getElementById("passwordMismatch").style.display = "block";
-    return;
   }
 });
 
