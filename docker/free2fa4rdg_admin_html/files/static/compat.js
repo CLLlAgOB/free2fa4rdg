@@ -48,18 +48,14 @@
         hide('loginSection');
         hide('mainContent');
         hide('changePasswordSection');
-      } catch (e) { // handle properly: log + fail fast
-        try {
-          if (window.console && window.console.error) {                               // NOSONAR (legacy ES5 bootstrap file)
-            window.console.error('ES5 bootstrap failed in compat check:', e);         // NOSONAR (legacy ES5 bootstrap file)
-          }
-          window.__APP_FEATURES_ERROR__ = (e && e.message) ? e.message : String(e);   // NOSONAR (legacy ES5 bootstrap file)
-        } catch (ignore) { }
-        try {
-          alert('Your browser is too old for this page. Please update it.');          // NOSONAR (legacy ES5 bootstrap file)
-        } catch (ignore2) { }
-        throw e;
-      }
+      } catch (e) {                                                                 // NOSONAR handle properly: log + fail fast
+        if (window.console && window.console.error) {                               // NOSONAR (legacy ES5 bootstrap file)
+          window.console.error('ES5 bootstrap failed in compat check:', e);         // NOSONAR (legacy ES5 bootstrap file)
+        }                                                                           // NOSONAR (legacy ES5 bootstrap file)
+        window.__APP_FEATURES_ERROR__ = (e && e.message) ? e.message : String(e);   // NOSONAR (legacy ES5 bootstrap file)
+        alert('Your browser is too old for this page. Please update it.');          // NOSONAR (legacy ES5 bootstrap file)
+        throw e;                                                                    // NOSONAR (legacy ES5 bootstrap file)
+      }                                                                             // NOSONAR (legacy ES5 bootstrap file)
     };
 
     if (document.readyState === 'loading') {

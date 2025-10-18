@@ -25,10 +25,9 @@ document.getElementById("logoutButton").addEventListener("click", function () {
   document.getElementById("changePasswordSection").style.display = "none";
 });
 
+const USERNAME_RE = /^[^\s\\]+\\[^\s\\]+$/;
 function validateUsernameFormat(username) {
-  // String.raw to avoid escaping backslashes in the pattern
-  const regex = new RegExp(String.raw`^[^\s\\]+\\[^\s\\]+$`);
-  return regex.test(username);
+  return USERNAME_RE.test(username);
 }
 
 function showNotification(message, type = "success") {

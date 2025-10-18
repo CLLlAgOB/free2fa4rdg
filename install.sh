@@ -71,63 +71,65 @@ if ! [[ -x "$(command -v docker)" ]]; then
         install_docker
     fi
 fi
+SEP=$(printf '%0.s-' {1..111})
+sep() { echo "$SEP"; }
 
 # Input parameters for the .env file
 echo "Please enter the following parameters for the .env file. Press Enter to use the default value."
 echo "CA_EXPIRY_DAYS: Validity period of the self-signed certificate (default 365 days)"
 read -p "Enter CA_EXPIRY_DAYS (default 365): " CA_EXPIRY_DAYS
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "FREE2FA_TELEGRAM_BOT_TOKEN: Your Telegram bot key"
 read -p "Enter FREE2FA_TELEGRAM_BOT_TOKEN (default your-key): " FREE2FA_TELEGRAM_BOT_TOKEN
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "FREE2FA_TELEGRAM_BOT_LANGUAGE: Language model, ru or en (default ru)"
 read -p "Enter FREE2FA_TELEGRAM_BOT_LANGUAGE (default ru): " FREE2FA_TELEGRAM_BOT_LANGUAGE
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "FREE2FA_AUTO_REG_ENABLED: Automatic registration of new users with Telegram ID 0 (default true)"
 read -p "Enter FREE2FA_AUTO_REG_ENABLED (default true): " FREE2FA_AUTO_REG_ENABLED
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "FREE2FA_BYPASS_ENABLED: Bypass all users with Telegram ID 0 without a request (default true)"
 read -p "Enter FREE2FA_BYPASS_ENABLED (default true): " FREE2FA_BYPASS_ENABLED
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "RADIUS_CLIENT_SECRET: Secret phrase for RADIUS (default secret123)"
 read -p "Enter RADIUS_CLIENT_SECRET (default secret123): " RADIUS_CLIENT_SECRET
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "FREE2FA_TIMEOUT: Waiting time for confirmation or rejection of login in the range of 10 to 20 seconds (default 20 seconds)"
 read -p "Enter FREE2FA_TIMEOUT (default 20): " FREE2FA_TIMEOUT
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "RADIUS_START_SERVERS: Number of initial RADIUS server processes (default 5)"
 read -p "Enter RADIUS_START_SERVERS (default 5): " RADIUS_START_SERVERS
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "RADIUS_MAX_SERVERS: Maximum number of RADIUS server processes (default 20)"
 read -p "Enter RADIUS_MAX_SERVERS (default 20): " RADIUS_MAX_SERVERS
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "RADIUS_MAX_SPARE_SERVERS: Maximum number of backup RADIUS server processes (default 10)"
 read -p "Enter RADIUS_MAX_SPARE_SERVERS (default 10): " RADIUS_MAX_SPARE_SERVERS
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "RADIUS_MIN_SPARE_SERVERS: Minimum number of backup RADIUS server processes (default 5)"
 read -p "Enter RADIUS_MIN_SPARE_SERVERS (default 5): " RADIUS_MIN_SPARE_SERVERS
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "ADMIN_SECRET_KEY: Administrator key (auto-generated if left empty)"
 read -p "Enter ADMIN_SECRET_KEY (auto-generated if empty):" ADMIN_SECRET_KEY
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "RESET_PASSWORD: Enables resetting the forgotten administrator password"
 read -p "Enter RESET_PASSWORD (default false): " RESET_PASSWORD
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "ALLOW_API_FAILURE_PASS: Skips the second factor if api.telegram.ru is not available (default false)"
 read -p "Enter ALLOW_API_FAILURE_PASS (default false):" ALLOW_API_FAILURE_PASS
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML: DNS name that will be added to the self-signed certificate."
 read -p "Enter ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML (default free2fa4rdg): " ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "REQUIRE_MESSAGE_AUTHENTICATOR: Require mandatory Message-Authenticator attribute in RADIUS messages (default true)"
 read -p "Enter REQUIRE_MESSAGE_AUTHENTICATOR (default true): " REQUIRE_MESSAGE_AUTHENTICATOR
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "FREE2FA_CACHE_ENABLED: Enable/disable user cache (default true)"
 read -p "Enter FREE2FA_CACHE_ENABLED (default true): " FREE2FA_CACHE_ENABLED
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "FREE2FA_CACHE_TTL: Cache lifetime in seconds (default 32400 ≈ 9h)"
 read -p "Enter FREE2FA_CACHE_TTL (default 32400): " FREE2FA_CACHE_TTL
-echo "---------------------------------------------------------------------------------------------------------------"
+sep
 echo "FREE2FA_DEBUG_ENABLED: Enable debug (default false)"
 read -p "Enter FREE2FA_DEBUG_ENABLED (default false): " FREE2FA_DEBUG_ENABLED
 
