@@ -9,6 +9,7 @@
 # (at your option) any later version.
 
 #Applying customizations to the config.
+set -Eeuo pipefail
 CONFIG_FILE_RADIUS="/etc/freeradius/radiusd.conf"
 CONFIG_FILE_CLIENT="/etc/freeradius/clients.conf"
 CONFIG_FILE_REST="/etc/freeradius/mods-enabled/rest"
@@ -26,7 +27,7 @@ RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS:-3}
 key_file="/etc/freeradius/key"
 
 # Check if the file exists
-if [ ! -f "$key_file" ]; then
+if [[ ! -f "$key_file" ]]; then
     # Generate 32 random characters
     random_key=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 32)
 
@@ -82,7 +83,7 @@ curl -s -X POST https://free2fa4rdg_api:5000/authorize \
     -H "Content-Type: application/json" \
     -d "$DATA"
 
-if [ "${FREE2FA_CACHE_ENABLED,,}" = "true" ]; then
+if [[ "${FREE2FA_CACHE_ENABLED,,}" = "true" ]]; then
     echo "[start] Enabling 2FA cache with TTL=${FREE2FA_CACHE_TTL:-32400}"
     # Turn on the module cache_2fa
     ln -sf /etc/freeradius/mods-available/cache_2fa /etc/freeradius/mods-enabled/cache_2fa
@@ -105,7 +106,7 @@ else
 fi
 
 # Starting the FreeRADIUS
-if [ "${FREE2FA_DEBUG_ENABLED,,}" = "true" ]; then
+if [[ "${FREE2FA_DEBUG_ENABLED,,}" = "true" ]]; then
     su -s /bin/bash freerad -c "/usr/sbin/freeradius -X"
 else
     su -s /bin/bash freerad -c "/usr/sbin/freeradius -f"

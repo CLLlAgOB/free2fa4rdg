@@ -8,21 +8,26 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY requirements.txt ./requirements.txt
-COPY entrypoint.sh     ./entrypoint.sh
-RUN chmod 0755 /app/entrypoint.sh
+COPY --chmod=0755 entrypoint.sh ./entrypoint.sh
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends ca-certificates curl build-essential gosu; \
-    rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        gosu \
+    ; \
+    rm -rf /var/lib/apt/lists/*; \
     python -m venv "${VIRTUAL_ENV}"; \
-    pip install --no-cache-dir --upgrade pip wheel setuptools; \
-    pip install --no-cache-dir -r /app/requirements.txt
-
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-    | sh -s -- --profile minimal --default-toolchain none -y
+    pip install --no-cache-dir --upgrade \
+        pip \
+        setuptools \
+        wheel \
+    ; \
+    pip install --no-cache-dir -r /app/requirements.txt; \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+      | sh -s -- --profile minimal --default-toolchain none -y
 
 COPY ./files/app/ /app/
 

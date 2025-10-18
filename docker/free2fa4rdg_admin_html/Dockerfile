@@ -7,8 +7,7 @@ RUN set -eux; \
 COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
 COPY ./files/ /usr/share/nginx/html/
 
-COPY entrypoint.sh /usr/local/bin/custom-entrypoint.sh
-RUN chmod +x /usr/local/bin/custom-entrypoint.sh
+COPY --chmod=0755 entrypoint.sh /usr/local/bin/custom-entrypoint.sh
 
 ENV SRC_CA=/usr/local/share/ca-certificates/ca.crt \
     NGINX_CERT_DIR=/usr/share/nginx/html/certs

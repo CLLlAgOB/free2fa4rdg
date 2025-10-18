@@ -1,31 +1,31 @@
 // ES5-compatible feature detection. No let/const/arrows.
 (function () {
   function has(path) {
-    var parts = path.split('.'), obj = window, i;
+    var parts = path.split('.'), obj = window, i;  // NOSONAR (legacy ES5 bootstrap file)
     for (i = 0; i < parts.length; i++) {
       obj = (obj && obj[parts[i]]) ? obj[parts[i]] : null;
     }
     return !!obj;
   }
 
-  var missing = [];
-  if (!('fetch' in window)) missing.push('Fetch API');
-  if (!('Promise' in window)) missing.push('Promise');
-  if (!('AbortController' in window)) missing.push('AbortController');
-  if (!('URLSearchParams' in window)) missing.push('URLSearchParams');
-  if (!('TextEncoder' in window)) missing.push('TextEncoder');
-  if (!has('crypto.subtle')) missing.push('WebCrypto (crypto.subtle)');
-  if (!('replaceChildren' in (window.Element || {}).prototype)) missing.push('Element.replaceChildren');
-  if (!('sessionStorage' in window)) missing.push('sessionStorage');
+  var missing = [];  // NOSONAR (legacy ES5 bootstrap file)
+  if (!('fetch' in window)) missing.push('Fetch API'); // NOSONAR (legacy ES5 bootstrap file)
+  if (!('Promise' in window)) missing.push('Promise'); // NOSONAR (legacy ES5 bootstrap file)
+  if (!('AbortController' in window)) missing.push('AbortController'); // NOSONAR (legacy ES5 bootstrap file)
+  if (!('URLSearchParams' in window)) missing.push('URLSearchParams'); // NOSONAR (legacy ES5 bootstrap file)
+  if (!('TextEncoder' in window)) missing.push('TextEncoder'); // NOSONAR (legacy ES5 bootstrap file)
+  if (!has('crypto.subtle')) missing.push('WebCrypto (crypto.subtle)'); // NOSONAR (legacy ES5 bootstrap file)
+  if (!('replaceChildren' in (window.Element || {}).prototype)) missing.push('Element.replaceChildren'); // NOSONAR (legacy ES5 bootstrap file)
+  if (!('sessionStorage' in window)) missing.push('sessionStorage'); // NOSONAR (legacy ES5 bootstrap file)
 
-  var supported = (missing.length === 0);
-  window.__APP_FEATURES_OK__ = supported;
-  window.__APP_FEATURES_MISSING__ = missing;
+  var supported = (missing.length === 0);     // NOSONAR (legacy ES5 bootstrap file) 
+  window.__APP_FEATURES_OK__ = supported;     // NOSONAR (legacy ES5 bootstrap file)
+  window.__APP_FEATURES_MISSING__ = missing;  // NOSONAR (legacy ES5 bootstrap file)
 
   if (!supported) {
-    var show = function () {
+    var show = function () {  // NOSONAR (legacy ES5 bootstrap file)
       try {
-        var banner = document.createElement('div');
+        var banner = document.createElement('div');  // NOSONAR (legacy ES5 bootstrap file)
         banner.className = 'unsupported-banner';
         banner.innerHTML =
           '<strong>Your browser is outdated.</strong> Your browser is outdated: ' +
@@ -35,10 +35,10 @@
         document.body.insertBefore(banner, document.body.firstChild);
 
         // Hide working sections so as not to confuse the user
-        var hide = function (id) {
-          var el = document.getElementById(id);
-          if (el) { el.style.display = 'none'; }
-        };
+        var hide = function (id) {                // NOSONAR (legacy ES5 bootstrap file)
+          var el = document.getElementById(id);   // NOSONAR (legacy ES5 bootstrap file)
+          if (el) { el.style.display = 'none'; }  // NOSONAR (legacy ES5 bootstrap file)
+        };                                        // NOSONAR (legacy ES5 bootstrap file)
         hide('loginSection');
         hide('mainContent');
         hide('changePasswordSection');

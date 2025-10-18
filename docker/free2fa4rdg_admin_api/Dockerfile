@@ -4,12 +4,11 @@ WORKDIR /app
 
 # Setup dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends gosu; \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*; \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy the code and entry point
 COPY adminapi.py ./adminapi.py
