@@ -16,8 +16,8 @@
         return el;
       })(document.createElement('script')));
     } else {
-      if (window.console && console.warn) {   // NOSONAR (legacy ES5 bootstrap file)
-        console.warn('Unsupported browser:', window.__APP_FEATURES_MISSING__);
+      if (window.console && console.warn) {                                     // NOSONAR (legacy ES5 bootstrap file)
+        console.warn('Unsupported browser:', window.__APP_FEATURES_MISSING__);  // NOSONAR (legacy ES5 bootstrap file)
       }
     }
   });

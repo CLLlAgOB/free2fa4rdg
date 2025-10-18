@@ -32,26 +32,26 @@ log() {
 
 # Check certificate expiry (returns 0 if the certificate is valid for more than 30 days)
 check_cert_expiry() {
-    local CERT=$1
-    log "INFO" "Checking expiry for certificate: $CERT"
+    local cert=$1
+    log "INFO" "Checking expiry for certificate: $cert"
 
-    if [[ -f "$CERT" ]]; then
-        local EXPIRY_DATE
-        EXPIRY_DATE=$(openssl x509 -enddate -noout -in "$CERT" | cut -d= -f2)
+    if [[ -f "$cert" ]]; then
+        local expiry_date
+        expiry_date=$(openssl x509 -enddate -noout -in "$cert" | cut -d= -f2)
         # Convert the expiry date to a format acceptable by the date command
-        local FORMATTED_EXPIRY_DATE
-        if ! FORMATTED_EXPIRY_DATE=$(date -d "${EXPIRY_DATE// GMT/}" +%s 2>/dev/null); then
-            log "INFO" "Error processing expiry date: $EXPIRY_DATE"
+        local formatted_expiry_date
+        if ! formatted_expiry_date=$(date -d "${expiry_date// GMT/}" +%s 2>/dev/null); then
+            log "INFO" "Error processing expiry date: $expiry_date"
             return 1
         fi
 
-        local CURRENT_SECONDS DIFF_SECONDS DAYS_LEFT
-        CURRENT_SECONDS=$(date +%s)
-        DIFF_SECONDS=$((FORMATTED_EXPIRY_DATE - CURRENT_SECONDS))
-        DAYS_LEFT=$((DIFF_SECONDS / 86400))
-        log "INFO" "Days until expiry: $DAYS_LEFT"
+        local current_seconds diff_seconds days_left
+        current_seconds=$(date +%s)
+        diff_seconds=$((formatted_expiry_date - current_seconds))
+        days_left=$((diff_seconds / 86400))
+        log "INFO" "Days until expiry: $days_left"
 
-        if (( DAYS_LEFT > 30 )); then
+        if (( days_left > 30 )); then
             log "INFO" "Certificate is valid for more than 30 days."
             return 0
         else
@@ -59,21 +59,21 @@ check_cert_expiry() {
             return 1
         fi
     else
-        log "INFO" "Certificate not found: $CERT"
+        log "INFO" "Certificate not found: $cert"
         return 1
     fi
 }
 
 # Function to generate certificates for microservices
 generate_service_cert() {
-    local SERVICE=$1
-    local SERVICE_EXPIRY_DAYS=${2:-365} # Default to 1 year if not set
-    SERVICE_DIR="/certs/${SERVICE}"
+    local service=$1
+    local service_expiry_days=${2:-365} # Default to 1 year if not set
+    SERVICE_DIR="/certs/${service}"
     mkdir -p "$SERVICE_DIR"
-    SERVICE_KEY="${SERVICE_DIR}/${SERVICE}.key"
-    SERVICE_CSR="${SERVICE_DIR}/${SERVICE}.csr"
-    SERVICE_CERT="${SERVICE_DIR}/${SERVICE}.crt"
-    SERVICE_CONFIG="${SERVICE_DIR}/${SERVICE}.cnf"
+    SERVICE_KEY="${SERVICE_DIR}/${service}.key"
+    SERVICE_CSR="${SERVICE_DIR}/${service}.csr"
+    SERVICE_CERT="${SERVICE_DIR}/${service}.crt"
+    SERVICE_CONFIG="${SERVICE_DIR}/${service}.cnf"
 
     # Create a config for the certificate with SAN (Subject Alternative Name)
     echo "[req]" >"$SERVICE_CONFIG"
@@ -82,7 +82,7 @@ generate_service_cert() {
     echo "prompt = no" >>"$SERVICE_CONFIG"
     echo "" >>"$SERVICE_CONFIG"
     echo "[req_distinguished_name]" >>"$SERVICE_CONFIG"
-    echo "CN = $SERVICE" >>"$SERVICE_CONFIG"
+    echo "CN = $service" >>"$SERVICE_CONFIG"
     echo "" >>"$SERVICE_CONFIG"
     echo "[v3_req]" >>"$SERVICE_CONFIG"
     echo "keyUsage = digitalSignature, keyEncipherment, keyAgreement" >>"$SERVICE_CONFIG"
@@ -90,21 +90,21 @@ generate_service_cert() {
     echo "subjectAltName = @alt_names" >>"$SERVICE_CONFIG"
     echo "" >>"$SERVICE_CONFIG"
     echo "[alt_names]" >>"$SERVICE_CONFIG"
-    echo "DNS.1 = $SERVICE" >>"$SERVICE_CONFIG"
+    echo "DNS.1 = $service" >>"$SERVICE_CONFIG"
     if [[ -n ${ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML:-} ]]; then
         echo "DNS.2 = $ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML" >>"$SERVICE_CONFIG"
     fi
 
     if check_cert_expiry "$SERVICE_CERT"; then
-        log "INFO" "Certificate for $SERVICE is valid for more than 30 days and does not require renewal."
+        log "INFO" "Certificate for $service is valid for more than 30 days and does not require renewal."
     else
-        log "INFO" "Generating/updating certificate for $SERVICE."
+        log "INFO" "Generating/updating certificate for $service."
         # Generate a key
         openssl genrsa -out "$SERVICE_KEY" 2048
         # Generate a CSR using the configuration
         openssl req -new -key "$SERVICE_KEY" -out "$SERVICE_CSR" -config "$SERVICE_CONFIG"
         # Sign the certificate using the CA root
-        openssl x509 -req -in "$SERVICE_CSR" -CA "$CA_CERT" -CAkey "$CA_KEY" -CAcreateserial -out "$SERVICE_CERT" -days "$SERVICE_EXPIRY_DAYS" -sha256 -extfile "$SERVICE_CONFIG" -extensions v3_req
+        openssl x509 -req -in "$SERVICE_CSR" -CA "$CA_CERT" -CAkey "$CA_KEY" -CAcreateserial -out "$SERVICE_CERT" -days "$service_expiry_days" -sha256 -extfile "$SERVICE_CONFIG" -extensions v3_req
     fi
     return 0
 }

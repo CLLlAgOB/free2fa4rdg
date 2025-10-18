@@ -8,8 +8,10 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
+set -Eeuo pipefail
+
 # Check for root privileges
-if [ "$(id -u)" != "0" ]; then
+if [[ "$(id -u)" != "0" ]]; then
     echo "This script must be run as root. Please run again with sudo or as root."
     exit 1
 fi
@@ -21,11 +23,14 @@ install_docker() {
     sh get-docker.sh
     systemctl enable docker
     systemctl start docker
+    return 0
 }
 
 # Function to generate a random key
 generate_random_key() {
-    tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 32 | head -n 1
+  tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32
+  echo
+  return 0
 }
 
 # Function to create a .env file
@@ -53,14 +58,16 @@ FREE2FA_CACHE_ENABLED=${17:-true}
 FREE2FA_CACHE_TTL=${18:-32400}
 FREE2FA_DEBUG_ENABLED${19:-false}
 EOF
+  echo ".env generated."
+  return 0
 }
 
 # Check and install Docker and Docker Compose
 echo "Checking for Docker and Docker Compose..."
-if ! [ -x "$(command -v docker)" ]; then
+if ! [[ -x "$(command -v docker)" ]]; then
     echo "Docker is not installed. Install it? (y/n)"
     read install_docker_choice
-    if [ "$install_docker_choice" = "y" ]; then
+    if [[ "$install_docker_choice" = "y" ]]; then
         install_docker
     fi
 fi

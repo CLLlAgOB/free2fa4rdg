@@ -6,10 +6,10 @@
 // (at your option) any later version.
 
 // --- Compatibility block: not executed in older browsers ---
-if (typeof window !== 'undefined' && window.__APP_FEATURES_OK__ === false) {
-  console.warn('Unsupported browser. Missing:', window.__APP_FEATURES_MISSING__);
-  throw new Error('Unsupported browser: ' + (window.__APP_FEATURES_MISSING__ || []).join(', '));
-}
+if (typeof window !== 'undefined' && window.__APP_FEATURES_OK__ === false) {                      // NOSONAR (legacy ES5 bootstrap file)
+  console.warn('Unsupported browser. Missing:', window.__APP_FEATURES_MISSING__);                 // NOSONAR (legacy ES5 bootstrap file)
+  throw new Error('Unsupported browser: ' + (window.__APP_FEATURES_MISSING__ || []).join(', '));  // NOSONAR (legacy ES5 bootstrap file)
+}                                                                                                 // NOSONAR (legacy ES5 bootstrap file)
 
 // Prefer globalThis over window
 const API_BASE_URL = globalThis.location?.origin ?? "";
@@ -384,15 +384,21 @@ document.getElementById("loginForm").addEventListener("submit", async function (
   }
 });
 
-(async function bootstrap() {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
-    return;
-  }
-  await checkAuthentication();
-  await checkResetPasswordEnabled();
-  setupResetPasswordButton();
-})();
+function runBootstrap() {
+  (async () => {
+    await checkAuthentication();
+    await checkResetPasswordEnabled();
+    setupResetPasswordButton();
+  })().catch((err) => {
+    console.error('Bootstrap failed:', err);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', runBootstrap, { once: true });
+} else {
+  runBootstrap();
+}
 
 async function checkResetPasswordEnabled() {
   try {

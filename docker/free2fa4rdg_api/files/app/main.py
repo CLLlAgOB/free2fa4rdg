@@ -220,10 +220,10 @@ async def handle_auth_with_wait(normalized_username):
     wait_time = 1  # Initial waiting time
     max_wait_time = Config.FREE2FA_TIMEOUT
 
-    while wait_time <= max_wait_time and normalized_username not in auth_requests:
+    while wait_time <= max_wait_time and normalized_username not in auth_requests:  # NOSONAR - intentional bounded polling (0.5s ticks)
         logger.debug("Waiting for a response for %s seconds %.1f from %d",
                      normalized_username, wait_time, max_wait_time)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.5)                                                    # NOSONAR - keep half-second ticks by design
         wait_time += 0.5
 
     if auth_requests.get(normalized_username):
