@@ -220,21 +220,21 @@ async def handle_auth_with_wait(normalized_username):
     wait_time = 1  # Initial waiting time
     max_wait_time = Config.FREE2FA_TIMEOUT
 
-    while wait_time <= max_wait_time and normalized_username not in auth_requests:
+    while wait_time <= max_wait_time and normalized_username not in auth_requests:  # NOSONAR - intentional bounded polling (0.5s ticks)
         logger.debug("Waiting for a response for %s seconds %.1f from %d",
                      normalized_username, wait_time, max_wait_time)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.5)                                                    # NOSONAR - keep half-second ticks by design
         wait_time += 0.5
 
     if auth_requests.get(normalized_username):
         logger.info("Authentication request accepted by user %s",
                     normalized_username)
-        asyncio.create_task(clear_auth_request(normalized_username))
+        _ = asyncio.create_task(clear_auth_request(normalized_username))
         return response_200()
     else:
         logger.info(
             "Authentication request rejected or timeout for user: %s", normalized_username)
-        asyncio.create_task(clear_auth_request(normalized_username))
+        _ = asyncio.create_task(clear_auth_request(normalized_username))
         return response_403() if normalized_username in auth_requests else response_408()
 
 
@@ -371,7 +371,7 @@ async def send_message_after_delay(chat_id, delay, message_text, normalized_user
         await send_limited_message(chat_id, message_text)
         await delete_message(chat_id, message_id)
         auth_requests[normalized_username] = False
-        asyncio.create_task(clear_auth_request(normalized_username))
+        _ = asyncio.create_task(clear_auth_request(normalized_username))
     except aiogram_exceptions.AiogramError as error:
         logger.exception("Error when sending message after delay: %s", error)
 
@@ -470,7 +470,7 @@ async def start_aiogram():
 
 async def main():
     """Launch FastAPI and aiogram in one event loop"""
-    asyncio.create_task(MessageLimiter.reset_message_count())
+    _ = asyncio.create_task(MessageLimiter.reset_message_count())
     loop = asyncio.get_event_loop()
     loop.create_task(start_aiogram())
     config = uvicorn.Config(

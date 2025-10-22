@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # start.sh
-# Copyright (C) 2024 Voloskov Aleksandr Nikolaevich
+# Copyright (C) 2025 Voloskov Aleksandr Nikolaevich
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -9,6 +9,7 @@
 # (at your option) any later version.
 
 #Applying customizations to the config.
+set -Eeuo pipefail
 CONFIG_FILE_RADIUS="/etc/freeradius/radiusd.conf"
 CONFIG_FILE_CLIENT="/etc/freeradius/clients.conf"
 CONFIG_FILE_REST="/etc/freeradius/mods-enabled/rest"
@@ -26,7 +27,7 @@ RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS:-3}
 key_file="/etc/freeradius/key"
 
 # Check if the file exists
-if [ ! -f "$key_file" ]; then
+if [[ ! -f "$key_file" ]]; then
     # Generate 32 random characters
     random_key=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 32)
 
@@ -57,12 +58,17 @@ sed -i "s/destination = .*/destination = stdout/" "$CONFIG_FILE_RADIUS"
 echo "Configuration updated."
 
 # Setting access rights to configuration files
-chmod 440 /etc/freeradius/clients.conf
-chmod 440 /etc/freeradius/sites-enabled/default
-chmod 440 /etc/freeradius/mods-enabled/rest
-chown root:freerad /etc/freeradius/clients.conf
-chown root:freerad /etc/freeradius/sites-enabled/default
-chown root:freerad /etc/freeradius/mods-enabled/rest
+FILES=(
+  /etc/freeradius/clients.conf
+  /etc/freeradius/sites-enabled/default
+  /etc/freeradius/mods-enabled/rest
+  /etc/freeradius/mods-available/cache_2fa
+  /etc/freeradius/mods-available/linelog-cache2fa
+)
+
+chown root:freerad "${FILES[@]}"
+chmod 0440       "${FILES[@]}"
+
 # Updating certificates
 update-ca-certificates
 
@@ -77,7 +83,31 @@ curl -s -X POST https://free2fa4rdg_api:5000/authorize \
     -H "Content-Type: application/json" \
     -d "$DATA"
 
+if [[ "${FREE2FA_CACHE_ENABLED,,}" = "true" ]]; then
+    echo "[start] Enabling 2FA cache with TTL=${FREE2FA_CACHE_TTL:-32400}"
+    # Turn on the module cache_2fa
+    ln -sf /etc/freeradius/mods-available/cache_2fa /etc/freeradius/mods-enabled/cache_2fa
+
+    #Turn on logs
+    ln -sf /etc/freeradius/mods-available/linelog-cache2fa /etc/freeradius/mods-enabled/linelog-cache2fa
+
+    # We correct the TTL in the module.
+    sed -i "s/^\(\s*ttl\s*=\s*\).*$/\1${FREE2FA_CACHE_TTL:-32400}/" /etc/freeradius/mods-available/cache_2fa
+
+    # Enable authorize/post-auth blocks for cache_2fa
+    sed -i 's/#CACHE2FA_ENABLED//g' /etc/freeradius/sites-enabled/default
+else
+    echo "[start] Disabling 2FA cache"
+    rm -f /etc/freeradius/mods-enabled/cache_2fa
+    rm -f /etc/freeradius/mods-enabled/linelog-cache2fa
+
+    # Comment out the authorize/post-auth blocks for cache_2fa
+    sed -i 's/^\(.*cache_2fa.*\)$/#CACHE2FA_DISABLED \1/' /etc/freeradius/sites-enabled/default
+fi
+
 # Starting the FreeRADIUS
-su -s /bin/bash freerad -c "/usr/sbin/freeradius -f"
-# For debug 
-#su -s /bin/bash freerad -c "/usr/sbin/freeradius -X"
+if [[ "${FREE2FA_DEBUG_ENABLED,,}" = "true" ]]; then
+    su -s /bin/bash freerad -c "/usr/sbin/freeradius -X"
+else
+    su -s /bin/bash freerad -c "/usr/sbin/freeradius -f"
+fi

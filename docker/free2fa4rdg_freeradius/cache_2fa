@@ -1,0 +1,9 @@
+cache cache_2fa {
+  driver      = "rlm_cache_rbtree"
+  key         = "%{User-Name}|%{MS-Machine-Name}"
+  ttl         = %{env:FREE2FA_CACHE_TTL:-32400}
+  max_entries = 200000
+  update {
+    control:Tmp-Integer-1 := 1
+  }
+}

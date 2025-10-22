@@ -82,7 +82,7 @@ Free2FA4RDG состоит из нескольких микросервисов,
 
 ### Настройка NPS
 
-![скрин](img/1-23.png)
+![скрин](img/1-1.png)
 
 
 1. Создайте новую группу в разделе Remote RADIUS Server Groups:
@@ -91,7 +91,7 @@ Free2FA4RDG состоит из нескольких микросервисов,
    - Shared secret: Ваш секрет, который будет в файле .env (`RADIUS_CLIENT_SECRET`).
    - Load Balancing: поставьте таймауты по 60 секунд
 
-![скрин](img/1-3.png)
+![скрин](img/1-23.png)
 
 2. В Connection Requests Policies откройте свойства политики `TS GATEWAY AUTHORIZATION POLICY` и установите `Forward requests to the following remote RADIUS server group for authentication: free2fa4rdg`.
 
@@ -114,7 +114,10 @@ Free2FA4RDG состоит из нескольких микросервисов,
 - `RESET_PASSWORD`: Включение функции сброса пароля(для сброса потребуется указать ADMIN_SECRET_KEY).
 - `ALLOW_API_FAILURE_PASS`: (true/false) Пускать пользователей без 2FA, если `api.telegram.org` недоступен. 
 - `ADDITIONAL_DNS_NAME_FOR_ADMIN_HTML`: ДНС имя веб сайта админки. Необходимо прописать его в днс или hosts для удобства доступа.
-
+- `REQUIRE_MESSAGE_AUTHENTICATOR`: (true/false) Требовать атрибут Message-Authenticator для проверки подлинности RADIUS-пакетов.
+- `FREE2FA_CACHE_ENABLED`: (true/false) включает или отключает запоминание компьютера после успешного подтверждения второго фактора. 
+- `FREE2FA_CACHE_TTL`: время (в секундах), на которое компьютер считается доверенным. По умолчанию 32400 секунд = 9 часов.
+- `FREE2FA_DEBUG_ENABLED`: (true/false) Включить выключить режим отладки для FreeRadius.
 При первом входе необходимо будет сменить пароль администратора.
 
 ![screenshot](img/1-2.png)
@@ -143,6 +146,85 @@ Free2FA4RDG состоит из нескольких микросервисов,
 
 Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
 
+**29.08.2025**
+Добавлена возможность кэширования второго фактора (запоминание компьютера на определённое время).
+Добавлены новые переменные:
+- FREE2FA_CACHE_ENABLED=true - (true/false) включает или отключает запоминание компьютера после успешного подтверждения второго фактора.
+- FREE2FA_CACHE_TTL=32400 - время (в секундах), на которое компьютер считается доверенным. По умолчанию 32400 секунд = 9 часов.
+
+Дополнительные действия для обновления с предыдущей версии:  
+  Добавить новые переменные в файл .env и docker-compose.yml
+
+В конец файла .env добавим:
+
+```shell
+FREE2FA_CACHE_ENABLED=true
+FREE2FA_CACHE_TTL=32400
+```
+В секцию environment: docker-compose.yml добавим:
+- FREE2FA_CACHE_ENABLED=${FREE2FA_CACHE_ENABLED:-true}
+- FREE2FA_CACHE_TTL=${FREE2FA_CACHE_TTL:-32400}
+
+```shell
+free2fa4rdg_freeradius:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:freeradius_latest
+    environment:
+      - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET}
+      - RADIUS_CLIENT_TIMEOUT=${FREE2FA_TIMEOUT}
+      - RADIUS_START_SERVERS=${RADIUS_START_SERVERS}
+      - RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS}
+      - RADIUS_MAX_SPARE_SERVERS=${RADIUS_MAX_SPARE_SERVERS}
+      - RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS}
+      - FREE2FA_CACHE_ENABLED=${FREE2FA_CACHE_ENABLED:-true}
+      - FREE2FA_CACHE_TTL=${FREE2FA_CACHE_TTL:-32400}
+```
+Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
+
+
+**11.10.2025**
+
+- Добавлено возможность включить отладку freeradius (в файле окружения .env FREE2FA_DEBUG_ENABLED=true)
+- Добавлено логирование при попадании пользователем в кэш.
+- Исправлены незначительные ошибки.
+  
+
+Дополнительные действия для обновления с предыдущей версии:  
+  Добавить новые переменные в файл .env и docker-compose.yml
+
+В конец файла .env добавим:
+
+```shell
+FREE2FA_DEBUG_ENABLED=false
+```
+В секцию environment: docker-compose.yml добавим:
+- FREE2FA_DEBUG_ENABLED=${FREE2FA_DEBUG_ENABLED:-false}
+  
+```shell
+free2fa4rdg_freeradius:
+    restart: unless-stopped
+    image: clllagob/free2fa4rdg:freeradius_latest
+    environment:
+      - RADIUS_CLIENT_SECRET=${RADIUS_CLIENT_SECRET}
+      - RADIUS_CLIENT_TIMEOUT=${FREE2FA_TIMEOUT}
+      - RADIUS_START_SERVERS=${RADIUS_START_SERVERS}
+      - RADIUS_MAX_SERVERS=${RADIUS_MAX_SERVERS}
+      - RADIUS_MAX_SPARE_SERVERS=${RADIUS_MAX_SPARE_SERVERS}
+      - RADIUS_MIN_SPARE_SERVERS=${RADIUS_MIN_SPARE_SERVERS}
+      - FREE2FA_CACHE_ENABLED=${FREE2FA_CACHE_ENABLED:-true}
+      - FREE2FA_CACHE_TTL=${FREE2FA_CACHE_TTL:-32400}
+      - FREE2FA_DEBUG_ENABLED=${FREE2FA_DEBUG_ENABLED:-false}
+```
+Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
+
+**17.10.2025**
+
+- Незначительное обновление кода и улучшение читаемости.
+- Использованы современные возможности JavaScript (например, `replaceChildren()`, `String.raw`, `optional chaining`).
+- ⚠️ **Важно:** Админка больше **не поддерживает устаревшие браузеры** (включая IE11 и старые версии Android WebView).
+
+
+Обновите компоненты используя инструкцию [Как обновить](#how-to-update).
 
 ## How to update
 

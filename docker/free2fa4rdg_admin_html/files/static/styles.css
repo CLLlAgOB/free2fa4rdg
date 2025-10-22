@@ -395,6 +395,8 @@ input[type="number"] {
   text-align: left;
   border: 1px solid #2c3e50;
   color: #fff; 
+  border: 1px solid #5a5a5a;
+  color: #fff;
 }
 
 #usersTable th {

@@ -1,5 +1,5 @@
 # adminapi.py
-# Copyright (C) 2024 Voloskov Aleksandr Nikolaevich
+# Copyright (C) 2025 Voloskov Aleksandr Nikolaevich
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -9,6 +9,8 @@
 
 import os
 import logging
+import logging.config
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from sqlite3 import IntegrityError
@@ -116,12 +118,15 @@ class PasswordChange(BaseModel):
 
 SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
 RESET_PASSWORD = os.getenv("RESET_PASSWORD", "false").lower() == "true"
-
+if not SECRET_KEY:
+    raise RuntimeError("ENV ADMIN_SECRET_KEY is required for JWT.")
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # Model for user data
+
+DATABASE_PATH = '/opt/db/users.db'
 
 
 class UserUpdate(BaseModel):
@@ -137,9 +142,6 @@ class UserUpdate(BaseModel):
     domain_and_username: str
     telegram_id: int
     is_bypass: bool
-
-
-DATABASE_PATH = '/opt/db/users.db'
 
 
 class User(BaseModel):
@@ -158,7 +160,7 @@ class User(BaseModel):
     is_bypass: bool = False
 
 
-async def generate_password_hash(password):
+async def generate_password_hash(password: str) -> str:
     """
     Generates a password hash using Bcrypt.
 
@@ -168,7 +170,7 @@ async def generate_password_hash(password):
     Returns:
         str: A hashed version of the password.
     """
-    return pwd_context.hash(password)
+    return await asyncio.to_thread(pwd_context.hash, password)
 
 
 def create_access_token(data: dict, scopes: List[str]):
@@ -183,7 +185,8 @@ def create_access_token(data: dict, scopes: List[str]):
         str: Encoded JWT token.
     """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + \
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire, "scopes": scopes})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -209,7 +212,7 @@ async def authenticate_user(username: str, password: str):
     return None
 
 
-async def verify_password(plain_password, hashed_password):
+async def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify a plain password against the hashed password.
 
@@ -220,7 +223,7 @@ async def verify_password(plain_password, hashed_password):
     Returns:
         bool: True if the password is correct, False otherwise.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    return await asyncio.to_thread(pwd_context.verify, plain_password, hashed_password)
 
 
 async def get_db():
@@ -278,7 +281,7 @@ async def init_db():
         await db_connection.commit()
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(token: str = Depends(oauth2_scheme)):
     """
     Retrieves the current authenticated user based on the provided JWT token.
 
@@ -609,7 +612,9 @@ async def change_password(password_change: PasswordChange,
                 raise HTTPException(status_code=404, detail=ERROR404)
 
             # Checking old password
-            if not pwd_context.verify(password_change.old_password, current_hashed_password[0]):
+            if not await asyncio.to_thread(
+                pwd_context.verify, password_change.old_password, current_hashed_password[0]
+            ):
                 raise HTTPException(
                     status_code=403, detail="Old password is incorrect")
 
