@@ -103,6 +103,9 @@ The installation script has been tested on Ubuntu 22.04 LTS and CentOS 7. Howeve
 - `CA_EXPIRY_DAYS`: Certificate validity period, in days.
 - `FREE2FA_TELEGRAM_BOT_TOKEN`: Your Telegram bot token.
 - `FREE2FA_TELEGRAM_BOT_LANGUAGE`: Language model (ru or en).
+- `FREE2FA_TELEGRAM_BOT_PROXY`: Optional proxy for Telegram bot requests.
+  Supports `socks5://`, `socks5://user:password@host:port`, and `http://`.
+  If empty or not specified, proxy is disabled.
 - `FREE2FA_AUTO_REG_ENABLED`: Automatic registration of new users. (New users will be automatically created in the database with Telegram ID 0, the real ID needs to be specified in the admin portal.)
 - `FREE2FA_BYPASS_ENABLED`: (true/false) Bypass users without request with Telegram ID 0.
 - `RADIUS_CLIENT_SECRET`: Secret phrase for RADIUS.
@@ -222,6 +225,33 @@ Update the components using the [How to update](#how-to-update) instructions.
 - Minor code update and readability improvements.
 - Modern JavaScript features are used (e.g., `replaceChildren()`, `String.raw`, `optional chaining`).
 - ⚠️ **Important:** The admin panel no longer supports outdated browsers (including IE11 and older versions of Android WebView).
+
+Update your components using the instructions in [How to update](#how-to-update).
+
+**18.03.2026**
+
+In free2fa4rdg_api:
+
+-  Added optional proxy support for the Telegram bot.
+-  New environment variable: `FREE2FA_TELEGRAM_BOT_PROXY`.
+-  By default, proxy is disabled. If the parameter is empty or not set, the bot works without a proxy.
+-  Added safer bot startup behavior: if the configured proxy is unavailable, the application no longer terminates the bot task with an unhandled exception.
+-  Now the application writes a warning to the log that the Telegram proxy is unavailable and continues retrying bot startup.
+
+Examples:
+-  without proxy: leave `FREE2FA_TELEGRAM_BOT_PROXY` empty
+-  SOCKS5 proxy: `socks5://proxy-host:1080`
+-  SOCKS5 proxy with authentication: `socks5://user:password@proxy-host:1080`
+-  HTTP proxy: `http://proxy-host:3128`
+
+Additional steps to update from a previous version:
+Add the new variable to `.env` and docker-compose.yml
+
+Add to `.env`:
+    FREE2FA_TELEGRAM_BOT_PROXY=
+
+Add to `free2fa4rdg_api` environment:
+    - FREE2FA_TELEGRAM_BOT_PROXY=${FREE2FA_TELEGRAM_BOT_PROXY:-}
 
 Update your components using the instructions in [How to update](#how-to-update).
 

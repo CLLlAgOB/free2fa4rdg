@@ -1,5 +1,5 @@
 # config.py
-# Copyright (C) 2024 Voloskov Aleksandr Nikolaevich
+# Copyright (C) 2026 Voloskov Aleksandr Nikolaevich
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,15 @@ class Config:
     TOKEN = os.environ.get("FREE2FA_TELEGRAM_BOT_TOKEN", "none")
     # Language of bot interface (ru or en)
     LANGUAGE = os.environ.get("FREE2FA_TELEGRAM_BOT_LANGUAGE", "ru")
+    # Optional proxy for Telegram Bot API requests.
+    # Empty value means proxy is disabled.
+    # Examples:
+    #   socks5://127.0.0.1:1080
+    #   http://proxy.local:3128
+    #   socks5://user:password@proxy.local:1080
+    TELEGRAM_BOT_PROXY = (
+        os.environ.get("FREE2FA_TELEGRAM_BOT_PROXY", "").strip() or None
+    )
     # Max message length from user
     MAX_MESSAGE_LENGTH = int(os.environ.get("FREE2FA_MAX_MESSAGE_LENGTH", 100))
     # Automatically creates users in the base while specifying telegram id 0

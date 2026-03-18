@@ -1,5 +1,6 @@
 fastapi==0.115.12
 aiogram~=3.19
+aiohttp-socks~=0.11.0
 uvicorn==0.34
 aiosqlite==0.21
 pydantic~=2.10

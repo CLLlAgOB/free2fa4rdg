@@ -1,5 +1,5 @@
 # main.py
-# Copyright (C) 2024 Voloskov Aleksandr Nikolaevich
+# Copyright (C) 2026 Voloskov Aleksandr Nikolaevich
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,14 +29,39 @@ if Config.LANGUAGE == 'ru':
 elif Config.LANGUAGE == 'en':
     import en_en as loc
 else:
-    # default value if language is not defined
     import en_en as loc
 
 router = Router()
 
 # FastAPI and aiogram initialization
 app = FastAPI()
-bot = Bot(token=Config.TOKEN, session=AiohttpSession(timeout=5))
+
+
+def build_bot_session():
+    """Create aiogram session with optional proxy support."""
+    session_kwargs = {"timeout": 5}
+    if Config.TELEGRAM_BOT_PROXY:
+        session_kwargs["proxy"] = Config.TELEGRAM_BOT_PROXY
+    return AiohttpSession(**session_kwargs)
+
+
+def is_proxy_error(exc: Exception) -> bool:
+    """Best-effort proxy error detection."""
+    exc_name = exc.__class__.__name__.lower()
+    exc_text = str(exc).lower()
+    proxy_markers = (
+        "proxy",
+        "socks",
+        "couldn't connect to proxy",
+        "cannot connect to proxy",
+    )
+    return (
+        any(marker in exc_name for marker in proxy_markers)
+        or any(marker in exc_text for marker in proxy_markers)
+    )
+
+
+bot = Bot(token=Config.TOKEN, session=build_bot_session())
 dp = Dispatcher()
 dp.include_router(router)
 
@@ -220,10 +245,12 @@ async def handle_auth_with_wait(normalized_username):
     wait_time = 1  # Initial waiting time
     max_wait_time = Config.FREE2FA_TIMEOUT
 
-    while wait_time <= max_wait_time and normalized_username not in auth_requests:  # NOSONAR - intentional bounded polling (0.5s ticks)
+    # NOSONAR - intentional bounded polling (0.5s ticks)
+    while wait_time <= max_wait_time and normalized_username not in auth_requests:
         logger.debug("Waiting for a response for %s seconds %.1f from %d",
                      normalized_username, wait_time, max_wait_time)
-        await asyncio.sleep(0.5)                                                    # NOSONAR - keep half-second ticks by design
+        # NOSONAR - keep half-second ticks by design
+        await asyncio.sleep(0.5)
         wait_time += 0.5
 
     if auth_requests.get(normalized_username):
@@ -456,16 +483,34 @@ async def start_aiogram():
     """Bot launch function"""
     while True:
         try:
-            logger.info("Bot Launch...")
+            if Config.TELEGRAM_BOT_PROXY:
+                logger.info("Bot launch via proxy: %s",
+                            Config.TELEGRAM_BOT_PROXY)
+            else:
+                logger.info("Bot launch without proxy")
+
             await dp.start_polling(bot)
             logger.info("The bot has been successfully launched.")
-            break  # Exit the loop after a successful start
+            break
+
+        except asyncio.CancelledError:
+            raise
+
         except aiogram_exceptions.TelegramNetworkError as network_err:
-            logger.warning(f"Telegram network error: {network_err}")
-        except aiogram_exceptions.AiogramError as other_err:
-            logger.error(f"Unhandled exception: {other_err}")
+            if Config.TELEGRAM_BOT_PROXY and is_proxy_error(network_err):
+                logger.warning(
+                    "Telegram proxy is unavailable: %s", network_err)
+            else:
+                logger.warning("Telegram network error: %s", network_err)
+
+        except Exception as err:
+            if Config.TELEGRAM_BOT_PROXY and is_proxy_error(err):
+                logger.warning("Telegram proxy is unavailable: %s", err)
+            else:
+                logger.exception("Unhandled bot error: %s", err)
+
         logger.warning("Retry in 5 seconds....")
-        await asyncio.sleep(5)  # Delay before the next attempt
+        await asyncio.sleep(5)
 
 
 async def main():

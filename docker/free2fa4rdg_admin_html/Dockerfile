@@ -15,6 +15,6 @@ ENV SRC_CA=/usr/local/share/ca-certificates/ca.crt \
 EXPOSE 80 443
 
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
-  CMD wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1
+  CMD wget --spider -q --no-check-certificate https://127.0.0.1/ || exit 1
 
 ENTRYPOINT ["/usr/local/bin/custom-entrypoint.sh"]
